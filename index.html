@@ -1,0 +1,350 @@
+<!-- canvas editor taken from http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/ -->
+<!-- sound transformations from http://arss.sourceforge.net/code.shtml -->
+<!-- JS port of FFTW from https://github.com/j-funk/js-dsp-test/tree/master/fft/fftw -->
+<style>li{display:inline-block}</style>
+<ul style="list-style-type:none;padding-left:0">
+	<li><button id="clearCanvasSimpleSizes" type="button">Clear</button></li>
+        <li id="chooseColor"><button type="button" style="background-color:black">&nbsp;</button><button type="button" style="background-color:dimgray">&nbsp;</button><button type="button" style="background-color:lightgray">&nbsp;</button><button type="button" style="background-color:white">&nbsp;</button></li>
+        <li id="chooseSize"><button type="button" style="border-width:1px">&nbsp;</button><button type="button" style="border-width:2.5px">&nbsp;</button><button type="button" style="border-width:5px">&nbsp;</button><button type="button" style="border-width:10px">&nbsp;</button></li>
+	<li><button id="play" type="button">Play</button></li>
+	<li><input id="loop" type="checkbox" checked>Loop</button></li>
+	<li><button id="copy" type="button">Copy</button></li>
+</ul>
+<div class="image">
+	<div id="canvasSimpleSizesDiv"></div>
+</div>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
+<script src="FFTW.js"></script>
+<script>
+var canvasWidth = 400;
+var canvasHeight = 225;
+
+var clickX_simpleSizes;
+var clickY_simpleSizes;
+var paint_simpleSizes;
+var canvas_simpleSizes;
+var context_simpleSizes;
+
+function prepareSimpleSizesCanvas()
+{
+	// Create the canvas (Neccessary for IE because it doesn't know what a canvas element is)
+	var canvasDiv = document.getElementById('canvasSimpleSizesDiv');
+	canvas_simpleSizes = document.createElement('canvas');
+	canvas_simpleSizes.setAttribute('width', canvasWidth);
+	canvas_simpleSizes.setAttribute('height', canvasHeight);
+	canvas_simpleSizes.setAttribute('id', 'canvasSimpleSizes');
+	canvasDiv.appendChild(canvas_simpleSizes);
+	if(typeof G_vmlCanvasManager != 'undefined') {
+		canvas_simpleSizes = G_vmlCanvasManager.initElement(canvas_simpleSizes);
+	}
+	context_simpleSizes = canvas_simpleSizes.getContext("2d"); // Grab the 2d canvas context
+	// Note: The above code is a workaround for IE 8 and lower. Otherwise we could have used:
+	//     context = document.getElementById('canvas').getContext("2d");
+
+	var initialImage = new Image();
+	initialImage.src = "meklon.png";
+	initialImage.onload = function() {
+		context_simpleSizes.drawImage(initialImage, 0, 0, canvasWidth, canvasHeight);
+	}
+	context_simpleSizes.lineWidth = 5;
+	context_simpleSizes.strokeStyle = "white";
+	context_simpleSizes.lineJoin = "round";
+	
+	// Add mouse events
+	// ----------------
+	$('#canvasSimpleSizes').mousedown(function(e)
+	{
+		// Mouse down location
+		clickX_simpleSizes = e.pageX - this.offsetLeft;
+		clickY_simpleSizes = e.pageY - this.offsetTop;
+		
+		paint_simpleSizes = true;
+		context_simpleSizes.beginPath();
+		context_simpleSizes.moveTo(clickX_simpleSizes - 1, clickY_simpleSizes);
+		context_simpleSizes.lineTo(clickX_simpleSizes, clickY_simpleSizes);
+		context_simpleSizes.closePath();
+		context_simpleSizes.stroke();
+	});
+	
+	$('#canvasSimpleSizes').mousemove(function(e){
+		if(paint_simpleSizes){
+			context_simpleSizes.beginPath();
+			context_simpleSizes.moveTo(clickX_simpleSizes, clickY_simpleSizes);
+			clickX_simpleSizes = e.pageX - this.offsetLeft;
+			clickY_simpleSizes = e.pageY - this.offsetTop;
+			context_simpleSizes.lineTo(clickX_simpleSizes, clickY_simpleSizes);
+			context_simpleSizes.closePath();
+			context_simpleSizes.stroke();
+		}
+	});
+	
+	$('#canvasSimpleSizes').mouseup(function(e){
+		paint_simpleSizes = false;
+	});
+	
+	$('#canvasSimpleSizes').mouseleave(function(e){
+		paint_simpleSizes = false;
+	});
+	
+	$('#chooseColor button').mousedown(function(e){
+		context_simpleSizes.strokeStyle = e.target.style.backgroundColor;
+	});
+	$('#chooseSize button').mousedown(function(e){
+		context_simpleSizes.lineWidth = e.target.style.borderWidth.match(/\d+/) * 2;
+	});
+	$('#clearCanvasSimpleSizes').mousedown(function(e)
+	{
+		context_simpleSizes.fillRect(0, 0, canvasWidth, canvasHeight);
+	});
+	$('#copy').mousedown(function(e)
+	{
+		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
+		for (var y=0; y<canvasHeight; y++)
+			for (var x=0; x<canvasWidth; x++)
+				imageData.data[4*(canvasWidth*y+x)+1] =imageData.data[4*(canvasWidth*y+x)+2] =0;
+		context_simpleSizes.putImageData(imageData, 0, 0);
+	});
+	$('#play').mousedown(play);
+
+	if (!window.AudioContext) {
+		if (!window.webkitAudioContext) {
+			alert("Your browser does not support any AudioContext and cannot play back audio.");
+			return;
+		}
+		window.AudioContext = window.webkitAudioContext;
+	}
+
+	var context = new AudioContext();
+
+	function play(){
+		$('#play').prop("disabled", true);
+		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight).data;
+		var pixels = [];
+		for (var y=0; y<canvasHeight; y++)
+		{
+			pixels[y] = [];
+			for (var x=0; x<canvasWidth; x++)
+				pixels[y][x] = (//imageData[4*(canvasWidth*y+x)] +
+						imageData[4*(canvasWidth*y+x)+1] +
+						imageData[4*(canvasWidth*y+x)+2]) / (255.0 * 2.0); // Conversion to grey by averaging the three channels
+		}
+		context.decodeAudioData(synt_sine(pixels).buffer,
+		function (audioBuffer){ // Play the loaded file
+			// Create a source node from the buffer
+			var source = context.createBufferSource();
+			source.buffer = audioBuffer;
+			// Connect to the final output node (the speakers)
+			source.connect(context.destination);
+			// Play immediately
+			source.start(0);
+			source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
+		});
+	}
+}
+/*
+function playByteArray( bytes ) {
+    var buffer = new Uint8Array( bytes.length );
+    buffer.set( new Uint8Array(bytes), 0 );
+
+    context.decodeAudioData(buffer.buffer, play);
+}
+*/
+
+function log_pos(x, min, max) // turns a logarithmic position (i.e. band number/band count) to a frequency
+{
+	return (max-min) * (min * Math.pow(2.0, x * (Math.log2(max)-Math.log2(min))) - min) / (min * Math.pow(2.0, Math.log2(max)-Math.log2(min)) - min) + min;
+}
+
+function smallprimes(x)   // returns 1 if x is only made of these small primes
+{
+        var i, p=[2, 3];
+
+        for (i=0; i<2; i++)
+                while (x%p[i] == 0)
+                        x/=p[i];
+
+        return x;
+}
+
+function nextsprime(x)    // returns the next integer only made of small primes
+{
+        while (smallprimes(x)!=1)
+                x++;
+
+        return x;
+}
+
+var basefreq = 110, maxfreq = 7900, samplerate = 44100, pixpersec = 50;
+var bpo = (canvasHeight-1) / (Math.log2(maxfreq) - Math.log2(basefreq));
+var sbsize = nextsprime(canvasWidth * 2);	    // In Circular mode keep it to sbsize = Xsize * 2;
+var Bc = Math.round(0.25 * sbsize);
+var Mh = (sbsize + 1) >> 1;
+var TRANSITION_BW_SYNT = 16.0; // defines the transition bandwidth for the low-pass filter on the envelopes during synthesis
+var tbw = (1.0/TRANSITION_BW_SYNT) * (Mh-1), bwl = Math.ceil(tbw); // double transition bandwidth
+var freq = [], filter = [];
+
+maxfreq /= samplerate
+basefreq /= samplerate;       // basefreq is now in fraction of the sampling rate instead of Hz
+pixpersec /= samplerate;      // pixpersec is now in fraction of the sampling rate instead of Hz
+
+for (var i=0;i<canvasHeight;i++)
+{
+	freq[i] = log_pos(i/(canvasHeight-1), basefreq, maxfreq);  //band's central freq
+}
+
+// generation of the frequency-domain filter
+for (var i=1; i<Mh; i++)
+	filter[i] = 1.0;
+
+for (var i=0; i<bwl; i++)
+{
+	var x = i / tbw; // position in the antiderivate of the Blackman function of the sample we're at, between 0.0 and 1.0
+	var coef = 0.42*x - (0.5/(2.0*Math.PI))*Math.sin(2.0*Math.PI*x) + (0.08/(4.0*Math.PI))*Math.sin(4.0*Math.PI*x); // antiderivative of the Blackman function
+	coef *= 1.0/0.42;
+	filter[i+1] = coef;
+	filter[Mh-1-i] = coef;
+}
+
+var FFTW_ESTIMATE = (1 << 6);
+var fftwModule = FFTWModule({});
+var fftw_plan_r2r_1d = fftwModule.cwrap('fftwf_plan_r2r_1d', 'number', ['number', 'number', 'number', 'number', 'number']);
+var fftw_execute = fftwModule.cwrap('fftwf_execute', 'void', ['number']);
+var fftw_destroy_plan = fftwModule.cwrap('fftwf_destroy_plan', 'void', ['number']);
+
+function fft_alloc(N)
+{
+	var ptr = fftwModule._malloc(N*4);
+	var a = new Float32Array(fftwModule.HEAPU8.buffer, ptr, N);
+	return [a, ptr];
+}
+var fft_free = fftwModule._free;
+
+function fft(ptr, N, method) /* method : 0 = DFT, 1 = IDFT, 2 = DHT */
+{
+        var p = fftw_plan_r2r_1d(N, ptr, ptr, method, FFTW_ESTIMATE);
+        fftw_execute(p);
+        fftw_destroy_plan(p);
+}
+
+function synt_sine(d)
+{
+        /*
+         d is the original image (spectrogram)
+         s is the output sound
+         sband is the band's envelope upsampled and shifted up in frequency
+         sbsize is the length of sband
+         sine is the random sine look-up table
+         *samplecount is the output sound's length
+         ib is the band iterator
+         i is a general purpose iterator
+         bands is the total count of bands
+         Fc is the index of the band's centre in the frequency domain on the new signal
+         Bc is the index of the band's centre in the frequency domain on sband (its imaginary match being sbsize-Bc)
+         Mh is the length of the real or imaginary part of the envelope's FFT, DC element included and Nyquist element excluded
+         Mn is the length of the real or imaginary part of the sound's FFT, DC element included and Nyquist element excluded
+         freq is the band's central frequency
+         rphase is the band's sine's random phase
+        */
+
+	var samplecount = Math.round(0.5*sbsize/pixpersec); // Do not change this value as it would stretch envelopes
+	var Mn = (samplecount + 1) >> 1;
+
+        var [s, s_ptr] = fft_alloc(samplecount);              // allocation of the sound signal
+	var [sband, sband_ptr] = fft_alloc(sbsize);           // allocation of the shifted band
+	var sine = [];
+        s.fill(0);
+
+        for (var ib=0; ib<canvasHeight; ib++)
+        {
+                sband.fill(0);    // reset sband
+
+                //********Frequency shifting********
+
+                var rphase = (Math.random() - 0.5) * 2 * Math.PI; // random phase between -pi and +pi
+
+                for (var i=0; i<4; i++)                           // generating the random sine LUT
+                        sine[i]=Math.cos(i*2.0*Math.PI*0.25 + rphase);
+
+                for (var i=0; i<canvasWidth; i++)                 // envelope sampling rate * 2 and frequency shifting by 0.25
+                {
+                        if ((i & 1) == 0)
+                        {
+                                sband[i<<1] = d[canvasHeight-ib-1][i] * sine[0];
+                                sband[(i<<1) + 1] = d[canvasHeight-ib-1][i] * sine[1];
+                        }
+                        else
+                        {
+                                sband[i<<1] = d[canvasHeight-ib-1][i] * sine[2];
+                                sband[(i<<1) + 1] = d[canvasHeight-ib-1][i] * sine[3];
+                        }
+                }
+                //--------Frequency shifting--------
+
+                fft(sband_ptr, sbsize, 0);                        // FFT of the envelope
+                var Fc = Math.round(freq[ib] * samplecount);      // band's centre index (envelope's DC element)
+
+                //********Write FFT********
+
+                for (var i=1; i<Mh; i++)
+                {
+                        if (Fc-Bc+i > 0 && Fc-Bc+i < Mn)     // if we're between frequencies 0 and 0.5 of the new signal and that we're not at Fc
+                        {
+                                s[i+Fc-Bc] += sband[i] * filter[i];                            // Real part
+                                s[samplecount-(i+Fc-Bc)] += sband[sbsize-i] * filter[i];       // Imaginary part
+                        }
+                }
+                //--------Write FFT--------
+        }
+
+        fft(s_ptr, samplecount, 1);                               // IFFT of the final sound
+        samplecount = Math.round(canvasWidth/pixpersec);          // chopping tails by ignoring them
+
+	// normalise the signal to the +/- 1.0 range
+
+        var max=0;
+	for (var ix=0; ix<samplecount; ix++)
+		if (Math.abs(s[ix])>max)
+			max=Math.abs(s[ix]);
+
+        if (max!=0.0)
+                max = 1.0/max;
+
+	for (var ix=0; ix<samplecount; ix++)
+		s[ix]*=max;
+
+	var wavfile = new Uint8Array(48 + 2 * samplecount), ptr=0;
+
+        //********WAV tags generation********
+        var tag = [1179011410, samplecount*2+36, 1163280727, 544501094, 16, 1, 1, samplerate, samplerate*2, 2, 16, 1635017060, samplecount*2, 0];
+
+        for (var i=0; i<13; i++)                                   // tag writing
+                if ((i==5) || (i==6) || (i==9) || (i==10))
+		{
+			wavfile[ptr++] = tag[i] & 0xFF;
+			wavfile[ptr++] = (tag[i] >> 8) & 0xFF;
+                } else {
+			wavfile[ptr++] = tag[i] & 0xFF;
+			wavfile[ptr++] = (tag[i] >> 8) & 0xFF;
+			wavfile[ptr++] = (tag[i] >> 16) & 0xFF;
+			wavfile[ptr++] = (tag[i] >> 24) & 0xFF;
+		}
+
+        for (var i=0; i<samplecount; i++)
+	{
+		var val=Math.round(s[i]*32768.0);
+		if (val>32767.0)
+			val=32767.0;
+		if (val<-32768.0)
+			val=-32768.0;
+
+		wavfile[ptr++] = val & 0xFF;
+		wavfile[ptr++] = (val >> 8) & 0xFF;
+	}
+
+	fft_free(s_ptr);
+	fft_free(sband_ptr);
+	return wavfile;
+}
+
+$(prepareSimpleSizesCanvas);
+</script>
