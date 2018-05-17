@@ -42,7 +42,7 @@ function prepareSimpleSizesCanvas()
 	//     context = document.getElementById('canvas').getContext("2d");
 
 	var initialImage = new Image();
-	initialImage.src = "meklon.png";
+	initialImage.src = location.hash || "yanny.png";
 	initialImage.onload = function() {
 		context_simpleSizes.drawImage(initialImage, 0, 0, canvasWidth, canvasHeight);
 	}
