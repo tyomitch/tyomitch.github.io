@@ -13,7 +13,7 @@
 <div class="image">
 	<div id="canvasSimpleSizesDiv"></div>
 </div>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
 <script src="FFTW.js"></script>
 <script>
 var canvasWidth = 400;
@@ -42,18 +42,22 @@ function prepareSimpleSizesCanvas()
 	//     context = document.getElementById('canvas').getContext("2d");
 
 	var initialImage = new Image();
-	initialImage.src = location.hash ? location.hash.substring(1) : "yanny.png";
+	initialImage.src = location.hash || "yanny.png";
 	initialImage.onload = function() {
 		context_simpleSizes.drawImage(initialImage, 0, 0, canvasWidth, canvasHeight);
 	}
 	context_simpleSizes.lineWidth = 5;
 	context_simpleSizes.strokeStyle = "white";
 	context_simpleSizes.lineJoin = "round";
+
+	var undoBuffer;
 	
 	// Add mouse events
 	// ----------------
 	$('#canvasSimpleSizes').mousedown(function(e)
 	{
+		undoBuffer = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
+
 		// Mouse down location
 		clickX_simpleSizes = e.pageX - this.offsetLeft;
 		clickY_simpleSizes = e.pageY - this.offsetTop;
@@ -106,6 +110,11 @@ function prepareSimpleSizesCanvas()
 	});
 	$('#play').mousedown(play);
 
+	$(document).keydown(function(e) {
+		if (e.keyCode == 90 && e.ctrlKey && undoBuffer)
+			context_simpleSizes.putImageData(undoBuffer, 0, 0);
+	});
+
 	if (!window.AudioContext) {
 		if (!window.webkitAudioContext) {
 			alert("Your browser does not support any AudioContext and cannot play back audio.");
@@ -114,9 +123,12 @@ function prepareSimpleSizesCanvas()
 		window.AudioContext = window.webkitAudioContext;
 	}
 
-	var context = new AudioContext();
+	var context;
 
 	function play(){
+		if (!context)
+			context = new AudioContext();
+
 		$('#play').prop("disabled", true);
 		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight).data;
 		var pixels = [];
