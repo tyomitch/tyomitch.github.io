@@ -13,7 +13,7 @@
 <div class="image">
 	<div id="canvasSimpleSizesDiv"></div>
 </div>
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
 <script src="FFTW.js"></script>
 <script>
 var canvasWidth = 400;
@@ -42,7 +42,7 @@ function prepareSimpleSizesCanvas()
 	//     context = document.getElementById('canvas').getContext("2d");
 
 	var initialImage = new Image();
-	initialImage.src = location.hash || "yanny.png";
+	initialImage.src = location.hash ? location.hash.substring(1) : "yanny.png";
 	initialImage.onload = function() {
 		context_simpleSizes.drawImage(initialImage, 0, 0, canvasWidth, canvasHeight);
 	}
