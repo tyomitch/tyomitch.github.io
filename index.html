@@ -157,14 +157,6 @@ function prepareSimpleSizesCanvas()
 			source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
 	}
 }
-/*
-function playByteArray( bytes ) {
-    var buffer = new Uint8Array( bytes.length );
-    buffer.set( new Uint8Array(bytes), 0 );
-
-    context.decodeAudioData(buffer.buffer, play);
-}
-*/
 
 function log_pos(x, min, max) // turns a logarithmic position (i.e. band number/band count) to a frequency
 {
