@@ -140,17 +140,21 @@ function prepareSimpleSizesCanvas()
 						imageData[4*(canvasWidth*y+x)+1] +
 						imageData[4*(canvasWidth*y+x)+2]) / (255.0 * 2.0); // Conversion to grey by averaging the three channels
 		}
-		context.decodeAudioData(synt_sine(pixels).buffer,
-		function (audioBuffer){ // Play the loaded file
+		var audioBuffer = synt_sine(pixels);
 			// Create a source node from the buffer
 			var source = context.createBufferSource();
-			source.buffer = audioBuffer;
+
+			var soundBuffer = context.createBuffer(1, audioBuffer.length, samplerate);
+			var buffer = soundBuffer.getChannelData(0);
+			for(var i=0; i<audioBuffer.length; i++)
+				buffer[i] = audioBuffer[i];
+			source.buffer = soundBuffer;
+
 			// Connect to the final output node (the speakers)
 			source.connect(context.destination);
 			// Play immediately
 			source.start(0);
 			source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
-		});
 	}
 }
 /*
@@ -324,34 +328,7 @@ function synt_sine(d)
 	for (var ix=0; ix<samplecount; ix++)
 		s[ix]*=max;
 
-	var wavfile = new Uint8Array(48 + 2 * samplecount), ptr=0;
-
-        //********WAV tags generation********
-        var tag = [1179011410, samplecount*2+36, 1163280727, 544501094, 16, 1, 1, samplerate, samplerate*2, 2, 16, 1635017060, samplecount*2, 0];
-
-        for (var i=0; i<13; i++)                                   // tag writing
-                if ((i==5) || (i==6) || (i==9) || (i==10))
-		{
-			wavfile[ptr++] = tag[i] & 0xFF;
-			wavfile[ptr++] = (tag[i] >> 8) & 0xFF;
-                } else {
-			wavfile[ptr++] = tag[i] & 0xFF;
-			wavfile[ptr++] = (tag[i] >> 8) & 0xFF;
-			wavfile[ptr++] = (tag[i] >> 16) & 0xFF;
-			wavfile[ptr++] = (tag[i] >> 24) & 0xFF;
-		}
-
-        for (var i=0; i<samplecount; i++)
-	{
-		var val=Math.round(s[i]*32768.0);
-		if (val>32767.0)
-			val=32767.0;
-		if (val<-32768.0)
-			val=-32768.0;
-
-		wavfile[ptr++] = val & 0xFF;
-		wavfile[ptr++] = (val >> 8) & 0xFF;
-	}
+	var wavfile = new Float32Array(s);
 
 	fft_free(s_ptr);
 	fft_free(sband_ptr);
