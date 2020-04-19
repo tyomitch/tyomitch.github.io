@@ -54,8 +54,7 @@ function prepareSimpleSizesCanvas()
 	
 	// Add mouse events
 	// ----------------
-	$('#canvasSimpleSizes').mousedown(function(e)
-	{
+	$('#canvasSimpleSizes').mousedown(function(e) {
 		undoBuffer = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
 
 		// Mouse down location
@@ -70,7 +69,7 @@ function prepareSimpleSizesCanvas()
 		context_simpleSizes.stroke();
 	});
 	
-	$('#canvasSimpleSizes').mousemove(function(e){
+	$('#canvasSimpleSizes').mousemove(function(e) {
 		if(paint_simpleSizes){
 			context_simpleSizes.beginPath();
 			context_simpleSizes.moveTo(clickX_simpleSizes, clickY_simpleSizes);
@@ -82,26 +81,24 @@ function prepareSimpleSizesCanvas()
 		}
 	});
 	
-	$('#canvasSimpleSizes').mouseup(function(e){
+	$('#canvasSimpleSizes').mouseup(function(e) {
 		paint_simpleSizes = false;
 	});
 	
-	$('#canvasSimpleSizes').mouseleave(function(e){
+	$('#canvasSimpleSizes').mouseleave(function(e) {
 		paint_simpleSizes = false;
 	});
 	
-	$('#chooseColor button').mousedown(function(e){
+	$('#chooseColor button').mousedown(function(e) {
 		context_simpleSizes.strokeStyle = e.target.style.backgroundColor;
 	});
-	$('#chooseSize button').mousedown(function(e){
+	$('#chooseSize button').mousedown(function(e) {
 		context_simpleSizes.lineWidth = e.target.style.borderWidth.match(/\d+/) * 2;
 	});
-	$('#clearCanvasSimpleSizes').mousedown(function(e)
-	{
+	$('#clearCanvasSimpleSizes').mousedown(function(e) {
 		context_simpleSizes.fillRect(0, 0, canvasWidth, canvasHeight);
 	});
-	$('#copy').mousedown(function(e)
-	{
+	$('#copy').mousedown(function(e) {
 		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
 		for (var y=0; y<canvasHeight; y++)
 			for (var x=0; x<canvasWidth; x++)
@@ -141,20 +138,20 @@ function prepareSimpleSizesCanvas()
 						imageData[4*(canvasWidth*y+x)+2]) / (255.0 * 2.0); // Conversion to grey by averaging the three channels
 		}
 		var audioBuffer = synt_sine(pixels);
-			// Create a source node from the buffer
-			var source = context.createBufferSource();
 
-			var soundBuffer = context.createBuffer(1, audioBuffer.length, samplerate);
-			var buffer = soundBuffer.getChannelData(0);
-			for(var i=0; i<audioBuffer.length; i++)
-				buffer[i] = audioBuffer[i];
-			source.buffer = soundBuffer;
-
-			// Connect to the final output node (the speakers)
-			source.connect(context.destination);
-			// Play immediately
-			source.start(0);
-			source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
+		// Create a source node from the buffer
+		var source = context.createBufferSource();
+		// Fill in source.buffer from audioBuffer
+		var soundBuffer = context.createBuffer(1, audioBuffer.length, samplerate);
+		var buffer = soundBuffer.getChannelData(0);
+		for(var i=0; i<audioBuffer.length; i++)
+			buffer[i] = audioBuffer[i];
+		source.buffer = soundBuffer;
+		// Connect to the final output node (the speakers)
+		source.connect(context.destination);
+		// Play immediately
+		source.start(0);
+		source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
 	}
 }
 
