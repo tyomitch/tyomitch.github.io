@@ -317,7 +317,7 @@ function synt_sine(d)
 	for (var ix=0; ix<samplecount; ix++)
 		s[ix]*=max;
 
-	var wavfile = new Float32Array(s);
+	var wavfile = new Float32Array(s.slice(0, samplecount));
 
 	fft_free(s_ptr);
 	fft_free(sband_ptr);
