@@ -9,9 +9,10 @@
   #playground input { width: 60%; }
   button#say { width: 100%; }
   input[type="range"] { transform: rotate(180deg); }
+  #canvas { cursor: default; }
 </style>
 <ul style="list-style-type:none;padding-left:0">
-	<li><button id="clearCanvasSimpleSizes" type="button">Clear</button></li>
+	<li><button id="clearCanvas" type="button">Clear</button></li>
         <li id="chooseColor"><button type="button" style="background-color:black">&nbsp;</button><button type="button" style="background-color:dimgray">&nbsp;</button><button type="button" style="background-color:lightgray">&nbsp;</button><button type="button" style="background-color:white">&nbsp;</button></li>
         <li id="chooseSize"><button type="button" style="border-width:1px">&nbsp;</button><button type="button" style="border-width:2.5px">&nbsp;</button><button type="button" style="border-width:5px">&nbsp;</button><button type="button" style="border-width:10px">&nbsp;</button></li>
 	<li><button id="play" type="button">Play</button></li>
@@ -19,7 +20,7 @@
 	<li><button id="copy" type="button">Copy</button></li>
 </ul>
 <div class="image">
-	<div id="canvasSimpleSizesDiv"></div>
+	<canvas id="canvas" />
 </div>
 <div id="playground">
   <div>
@@ -41,98 +42,88 @@
 var canvasWidth = 400;
 var canvasHeight = 225;
 
-var clickX_simpleSizes;
-var clickY_simpleSizes;
-var paint_simpleSizes;
-var canvas_simpleSizes;
-var context_simpleSizes;
+var clickX;
+var clickY;
+var paint;
+var canvasContext;
 
 function prepareSimpleSizesCanvas()
 {
-	// Create the canvas (Neccessary for IE because it doesn't know what a canvas element is)
-	var canvasDiv = document.getElementById('canvasSimpleSizesDiv');
-	canvas_simpleSizes = document.createElement('canvas');
-	canvas_simpleSizes.setAttribute('width', canvasWidth);
-	canvas_simpleSizes.setAttribute('height', canvasHeight);
-	canvas_simpleSizes.setAttribute('id', 'canvasSimpleSizes');
-	canvasDiv.appendChild(canvas_simpleSizes);
-	if(typeof G_vmlCanvasManager != 'undefined') {
-		canvas_simpleSizes = G_vmlCanvasManager.initElement(canvas_simpleSizes);
-	}
-	context_simpleSizes = canvas_simpleSizes.getContext("2d"); // Grab the 2d canvas context
-	// Note: The above code is a workaround for IE 8 and lower. Otherwise we could have used:
-	//     context = document.getElementById('canvas').getContext("2d");
+	var canvas = document.getElementById('canvas');
+	canvas.width = canvasWidth;
+	canvas.height = canvasHeight;
+	canvasContext = canvas.getContext("2d"); // Grab the 2d canvas context
 
 	var initialImage = new Image();
 	initialImage.src = location.hash ? location.hash.substring(1) : "habr.png";
 	initialImage.onload = function() {
-		context_simpleSizes.drawImage(initialImage, 0, 0, canvasWidth, canvasHeight);
+		canvasContext.drawImage(initialImage, 0, 0, canvasWidth, canvasHeight);
 	}
-	context_simpleSizes.lineWidth = 5;
-	context_simpleSizes.strokeStyle = "white";
-	context_simpleSizes.lineJoin = "round";
+	canvasContext.lineWidth = 5;
+	canvasContext.strokeStyle = "white";
+	canvasContext.lineJoin = "round";
 
 	var undoBuffer;
 	
 	// Add mouse events
 	// ----------------
-	$('#canvasSimpleSizes').mousedown(function(e) {
-		undoBuffer = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
+	$('#canvas').mousedown(function(e) {
+		undoBuffer = canvasContext.getImageData(0, 0, canvasWidth, canvasHeight);
 
 		// Mouse down location
-		clickX_simpleSizes = e.pageX - this.offsetLeft;
-		clickY_simpleSizes = e.pageY - this.offsetTop;
+		clickX = e.pageX - this.offsetLeft;
+		clickY = e.pageY - this.offsetTop;
 		
-		paint_simpleSizes = true;
-		context_simpleSizes.beginPath();
-		context_simpleSizes.moveTo(clickX_simpleSizes - 1, clickY_simpleSizes);
-		context_simpleSizes.lineTo(clickX_simpleSizes, clickY_simpleSizes);
-		context_simpleSizes.closePath();
-		context_simpleSizes.stroke();
+		paint = true;
+		canvasContext.beginPath();
+		canvasContext.moveTo(clickX - 1, clickY);
+		canvasContext.lineTo(clickX, clickY);
+		canvasContext.closePath();
+		canvasContext.stroke();
 	});
 	
-	$('#canvasSimpleSizes').mousemove(function(e) {
-		if(paint_simpleSizes){
-			context_simpleSizes.beginPath();
-			context_simpleSizes.moveTo(clickX_simpleSizes, clickY_simpleSizes);
-			clickX_simpleSizes = e.pageX - this.offsetLeft;
-			clickY_simpleSizes = e.pageY - this.offsetTop;
-			context_simpleSizes.lineTo(clickX_simpleSizes, clickY_simpleSizes);
-			context_simpleSizes.closePath();
-			context_simpleSizes.stroke();
+	$('#canvas').mousemove(function(e) {
+		if (paint) {
+			canvasContext.beginPath();
+			canvasContext.moveTo(clickX, clickY);
+			clickX = e.pageX - this.offsetLeft;
+			clickY = e.pageY - this.offsetTop;
+			canvasContext.lineTo(clickX, clickY);
+			canvasContext.closePath();
+			canvasContext.stroke();
 		}
 	});
 	
-	$('#canvasSimpleSizes').mouseup(function(e) {
-		paint_simpleSizes = false;
+	$('#canvas').mouseup(function(e) {
+		paint = false;
 	});
 	
-	$('#canvasSimpleSizes').mouseleave(function(e) {
-		paint_simpleSizes = false;
+	$('#canvas').mouseleave(function(e) {
+		paint = false;
 	});
 	
 	$('#chooseColor button').mousedown(function(e) {
-		context_simpleSizes.strokeStyle = e.target.style.backgroundColor;
+		canvasContext.strokeStyle = e.target.style.backgroundColor;
 	});
 	$('#chooseSize button').mousedown(function(e) {
-		context_simpleSizes.lineWidth = e.target.style.borderWidth.match(/\d+/) * 2;
+		canvasContext.lineWidth = e.target.style.borderWidth.match(/\d+/) * 2;
 	});
-	$('#clearCanvasSimpleSizes').mousedown(clear);
+	$('#clearCanvas').mousedown(clear);
 	function clear() {
-		context_simpleSizes.fillRect(0, 0, canvasWidth, canvasHeight);
+		canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
 	}
 	$('#copy').mousedown(function(e) {
-		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
+		var imageData = canvasContext.getImageData(0, 0, canvasWidth, canvasHeight);
 		for (var y=0; y<canvasHeight; y++)
 			for (var x=0; x<canvasWidth; x++)
 				imageData.data[4*(canvasWidth*y+x)+1] =imageData.data[4*(canvasWidth*y+x)+2] =0;
-		context_simpleSizes.putImageData(imageData, 0, 0);
+		canvasContext.putImageData(imageData, 0, 0);
 	});
 	$('#play').mousedown(play);
 
 	$(document).keydown(function(e) {
 		if (e.keyCode == 90 && e.ctrlKey && undoBuffer)
-			context_simpleSizes.putImageData(undoBuffer, 0, 0);
+			canvasContext.putImageData(undoBuffer, 0, 0);
 	});
 
 	if (!window.AudioContext) {
@@ -150,7 +141,7 @@ function prepareSimpleSizesCanvas()
 			context = new AudioContext();
 
 		$('#play').prop("disabled", true);
-		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight).data;
+		var imageData = canvasContext.getImageData(0, 0, canvasWidth, canvasHeight).data;
 		var pixels = [];
 		for (var y=0; y<canvasHeight; y++)
 		{
@@ -235,8 +226,8 @@ function prepareSimpleSizesCanvas()
 						value += bins[j] + fraction * (bins[j+1] - bins[j]);
 					value /= (nextBin - thisBin);
 				}
-				context_simpleSizes.fillStyle = toRGBString(~~value);
-				context_simpleSizes.fillRect(x, canvasHeight - i, 1, 1);
+				canvasContext.fillStyle = toRGBString(~~value);
+				canvasContext.fillRect(x, canvasHeight - i, 1, 1);
 			}
 		}
 		drawSpectrum(0);
