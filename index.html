@@ -1,7 +1,15 @@
 <!-- canvas editor taken from http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/ -->
 <!-- sound transformations from http://arss.sourceforge.net/code.shtml -->
 <!-- JS port of FFTW from https://github.com/j-funk/js-dsp-test/tree/master/fft/fftw -->
-<style>li{display:inline-block}</style>
+<!-- JS port of SAM from https://github.com/discordier/sam -->
+<style>
+  li, label, input { display: inline-block; }
+  #playground { width: 400px; margin-top: 1em; }
+  label { width: 30% }
+  #playground input { width: 60%; }
+  button#say { width: 100%; }
+  input[type="range"] { transform: rotate(180deg); }
+</style>
 <ul style="list-style-type:none;padding-left:0">
 	<li><button id="clearCanvasSimpleSizes" type="button">Clear</button></li>
         <li id="chooseColor"><button type="button" style="background-color:black">&nbsp;</button><button type="button" style="background-color:dimgray">&nbsp;</button><button type="button" style="background-color:lightgray">&nbsp;</button><button type="button" style="background-color:white">&nbsp;</button></li>
@@ -13,8 +21,22 @@
 <div class="image">
 	<div id="canvasSimpleSizesDiv"></div>
 </div>
+<div id="playground">
+  <div>
+    <label for="speechinput">Text to speak:</label>
+    <input size="60" id="speechinput" value="/HOH5TEHL, AH5LFAH, BRAH4VOW, ROW5MIHOW">
+  <hr>
+    <label id="pitch-lbl" for="pitch">Pitch:   </label><input type="range" id="pitch" min="0" max="255" value="0" />
+    <label id="speed-lbl" for="speed">Speed:   </label><input type="range" id="speed" min="1" max="255" value="0" />
+    <label id="mouth-lbl" for="mouth">Mouth:   </label><input type="range" id="mouth" min="0" max="255" value="0" />
+    <label id="throat-lbl" for="throat">Throat: </label><input type="range" id="throat" min="0" max="255" value="0" />
+    <button type="button" id="say">Say</button>
+  </div>
+</div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
 <script src="FFTW.js"></script>
+<script src="parser.js"></script>
+<script src="renderer.js"></script>
 <script>
 var canvasWidth = 400;
 var canvasHeight = 225;
@@ -95,9 +117,10 @@ function prepareSimpleSizesCanvas()
 	$('#chooseSize button').mousedown(function(e) {
 		context_simpleSizes.lineWidth = e.target.style.borderWidth.match(/\d+/) * 2;
 	});
-	$('#clearCanvasSimpleSizes').mousedown(function(e) {
+	$('#clearCanvasSimpleSizes').mousedown(clear);
+	function clear() {
 		context_simpleSizes.fillRect(0, 0, canvasWidth, canvasHeight);
-	});
+	}
 	$('#copy').mousedown(function(e) {
 		var imageData = context_simpleSizes.getImageData(0, 0, canvasWidth, canvasHeight);
 		for (var y=0; y<canvasHeight; y++)
@@ -122,7 +145,7 @@ function prepareSimpleSizesCanvas()
 
 	var context;
 
-	function play(){
+	function play() {
 		if (!context)
 			context = new AudioContext();
 
@@ -153,6 +176,71 @@ function prepareSimpleSizesCanvas()
 		source.start(0);
 		source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
 	}
+
+	$('#say').mousedown(function(e) {
+		var parsed = Parser(document.getElementById('speechinput').value);
+		var audioBuffer = Renderer(parsed, opts.pitch, opts.mouth, opts.throat, opts.speed);
+
+		if (!context)
+			context = new AudioContext();
+
+		// Create a source node from the buffer
+		var source = context.createBufferSource();
+		// Fill in source.buffer from audioBuffer
+		var soundBuffer = context.createBuffer(1, audioBuffer.length, 22050);
+		var buffer = soundBuffer.getChannelData(0);
+		for(var i=0; i<audioBuffer.length; i++)
+			buffer[i] = (audioBuffer[i] - 128) / 256;
+		source.buffer = soundBuffer;
+
+		var analyser = context.createAnalyser();
+		analyser.smoothingTimeConstant = 0.1;
+		analyser.fftSize = 1024;
+		analyser.minDecibels = -60;
+		source.connect(analyser);
+		source.connect(context.destination);
+
+		clear();
+		var audioEnded = false;
+		source.onended = function() { audioEnded = true; };
+
+		source.start(0);
+		function drawSpectrum(x) {
+			if (audioEnded)
+				return;
+			setTimeout(drawSpectrum, 1000 / pixpersec / samplerate, x + 1);
+
+			var bins = new Uint8Array(analyser.frequencyBinCount);
+			analyser.getByteFrequencyData(bins);
+
+			function toRGBString(v) {
+				return 'rgba(' + [v,v,v,1].toString() + ')';
+			}
+
+			for (var i = 0; i < freq.length; i++) {
+				var precise = freq[i] * 1024;
+				var thisBin = ~~precise;
+				var nextBin = ~~((i < freq.length-1) && freq[i+1] * 1024);
+
+				// linear interpolation
+				var fraction = precise - thisBin;
+				var value = bins[thisBin] + fraction * (bins[thisBin+1] - bins[thisBin]);
+
+				if (thisBin != nextBin) {
+					if (!nextBin)
+						nextBin = 187;  // magic!
+
+					// average the bins
+					for (var j = thisBin + 1; j < nextBin; j++)
+						value += bins[j] + fraction * (bins[j+1] - bins[j]);
+					value /= (nextBin - thisBin);
+				}
+				context_simpleSizes.fillStyle = toRGBString(~~value);
+				context_simpleSizes.fillRect(x, canvasHeight - i, 1, 1);
+			}
+		}
+		drawSpectrum(0);
+	});
 }
 
 function log_pos(x, min, max) // turns a logarithmic position (i.e. band number/band count) to a frequency
@@ -325,4 +413,25 @@ function synt_sine(d)
 }
 
 $(prepareSimpleSizesCanvas);
+
+  opts = {
+    debug: 1,
+    pitch: 56,
+    speed: 170,
+    mouth: 180,
+    throat: 160
+  };
+  document.addEventListener('DOMContentLoaded', function() {
+    ['speed', 'pitch', 'mouth', 'throat'].forEach(
+      (name) => {
+        var e = document.getElementById(name);
+        e.onchange = function (e) {
+          opts[e.target.id] = e.target.value;
+          document.getElementById(e.target.id + '-lbl').innerText =
+            e.target.id.charAt(0).toUpperCase() + e.target.id.substr(1) + ': ' + e.target.value;
+        };
+        e.value = opts[name];
+      }
+    );
+  });
 </script>
