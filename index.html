@@ -47,7 +47,7 @@ var clickY;
 var paint;
 var canvasContext;
 
-function prepareSimpleSizesCanvas()
+function prepareCanvas()
 {
 	var canvas = document.getElementById('canvas');
 	canvas.width = canvasWidth;
@@ -168,75 +168,72 @@ function prepareSimpleSizesCanvas()
 		source.onended = function(){ if ($('#loop').prop("checked")) play(); else $('#play').prop("disabled", false); };
 	}
 
-	$('#say').mousedown(function(e) {
-		var parsed = Parser(document.getElementById('speechinput').value);
-		var audioBuffer = Renderer(parsed, opts.pitch, opts.mouth, opts.throat, opts.speed);
-
-		if (!context)
-			context = new AudioContext();
-
-		// Create a source node from the buffer
-		var source = context.createBufferSource();
-		// Fill in source.buffer from audioBuffer
-		var soundBuffer = context.createBuffer(1, audioBuffer.length, 22050);
-		var buffer = soundBuffer.getChannelData(0);
-		for(var i=0; i<audioBuffer.length; i++)
-			buffer[i] = (audioBuffer[i] - 128) / 256;
-		source.buffer = soundBuffer;
-
-		var analyser = context.createAnalyser();
-		analyser.smoothingTimeConstant = 0.1;
-		analyser.fftSize = 1024;
-		analyser.minDecibels = -60;
-		source.connect(analyser);
-		source.connect(context.destination);
-
+	function say() {
+		function pset(x, freq, v) {
+			var y = log_pos_inv(freq*.57/1024, basefreq, maxfreq) * (canvasHeight-1);
+			canvasContext.fillStyle = 'rgba(' + [v,v,v,1].toString() + ')';
+			canvasContext.fillRect(x, canvasHeight - y, 1, 1);
+		}
 		clear();
-		var audioEnded = false;
-		source.onended = function() { audioEnded = true; };
+		var x = 0;
 
-		source.start(0);
-		function drawSpectrum(x) {
-			if (audioEnded)
-				return;
-			setTimeout(drawSpectrum, 1000 / pixpersec / samplerate, x + 1);
+		var parsed = Parser(document.getElementById('speechinput').value);
+		var sentences = Renderer(parsed, opts.pitch, opts.mouth, opts.throat, /*singmode*/false);
+		for (var sentence of sentences) {
+			var [frameCount, frequency, pitches, amplitude, sampledConsonantFlag] = sentence;
 
-			var bins = new Uint8Array(analyser.frequencyBinCount);
-			analyser.getByteFrequencyData(bins);
+			for (var pos=0; pos<frameCount; x++, pos++) {
+				let flags = sampledConsonantFlag[pos];
 
-			function toRGBString(v) {
-				return 'rgba(' + [v,v,v,1].toString() + ')';
-			}
+				// unvoiced sampled phoneme?
+				if ((flags & 248) !== 0) {
+					//TODO: RenderSample(flags, pitches[pos & 0xFF]);
+					// skip ahead two in the phoneme buffer
+					pos++;
+					continue;
+				} else {
+					pset(x, frequency[0][pos], amplitude[0][pos] * 17);
+					pset(x, frequency[1][pos], amplitude[1][pos] * 17);
+					pset(x, frequency[2][pos], amplitude[2][pos] * 17);
 
-			for (var i = 0; i < freq.length; i++) {
-				var precise = freq[i] * 1024;
-				var thisBin = ~~precise;
-				var nextBin = ~~((i < freq.length-1) && freq[i+1] * 1024);
-
-				// linear interpolation
-				var fraction = precise - thisBin;
-				var value = bins[thisBin] + fraction * (bins[thisBin+1] - bins[thisBin]);
-
-				if (thisBin != nextBin) {
-					if (!nextBin)
-						nextBin = 187;  // magic!
-
-					// average the bins
-					for (var j = thisBin + 1; j < nextBin; j++)
-						value += bins[j] + fraction * (bins[j+1] - bins[j]);
-					value /= (nextBin - thisBin);
+					if (flags !== 0) {
+						// voiced sampled phonemes interleave the sample with the
+						// glottal pulse.
+						//TODO: RenderSample(flags, pitches[pos & 0xFF]);
+					}
 				}
-				canvasContext.fillStyle = toRGBString(~~value);
-				canvasContext.fillRect(x, canvasHeight - i, 1, 1);
 			}
 		}
-		drawSpectrum(0);
-	});
+	}
+	$('#say').mousedown(say);
+
+	var opts = {
+		debug: 1,
+		pitch: 64,
+		speed: 170,
+		mouth: 128,
+		throat: 128
+	};
+	for (var name of ['speed', 'pitch', 'mouth', 'throat']) {
+		var e = document.getElementById(name);
+		e.onchange = function (e) {
+			opts[e.target.id] = e.target.value;
+			document.getElementById(e.target.id + '-lbl').innerText =
+				e.target.id.charAt(0).toUpperCase() + e.target.id.substr(1) + ': ' + e.target.value;
+			say();
+		};
+		e.value = opts[name];
+	}
 }
 
 function log_pos(x, min, max) // turns a logarithmic position (i.e. band number/band count) to a frequency
 {
 	return min * Math.pow(2.0, x * (Math.log2(max) - Math.log2(min)));
+}
+
+function log_pos_inv(x, min, max)  // turns a frequency to a logarithmic position (i.e. band number/band count)
+{
+        return Math.log2(x / min) / (Math.log2(max) - Math.log2(min));
 }
 
 function smallprimes(x)   // returns 1 if x is only made of these small primes
@@ -403,26 +400,6 @@ function synt_sine(d)
 	return wavfile;
 }
 
-$(prepareSimpleSizesCanvas);
+$(prepareCanvas);
 
-  opts = {
-    debug: 1,
-    pitch: 56,
-    speed: 170,
-    mouth: 180,
-    throat: 160
-  };
-  document.addEventListener('DOMContentLoaded', function() {
-    ['speed', 'pitch', 'mouth', 'throat'].forEach(
-      (name) => {
-        var e = document.getElementById(name);
-        e.onchange = function (e) {
-          opts[e.target.id] = e.target.value;
-          document.getElementById(e.target.id + '-lbl').innerText =
-            e.target.id.charAt(0).toUpperCase() + e.target.id.substr(1) + ': ' + e.target.value;
-        };
-        e.value = opts[name];
-      }
-    );
-  });
 </script>

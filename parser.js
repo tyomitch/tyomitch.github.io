@@ -113,49 +113,50 @@
    *    ' *', '.*', '?*', ',*', '-*'
    *  0x4000
    *    '.*', '?*', ',*', '-*', 'Q*'
-   *  0x2000
+   *  0x2000  FLAG_FRICATIVE
    *    'S*', 'SH', 'F*', 'TH', 'Z*', 'ZH', 'V*', 'DH', 'CH', '**', '**'
-   *  0x1000
+   *  0x1000  FLAG_LIQUIC
    *    'R*', 'L*', 'W*', 'Y*'
-   *  0x0800
+   *  0x0800  FLAG_NASAL
    *    'M*', 'N*', 'NX'
-   *  0x0400
+   *  0x0400  FLAG_ALVEOLAR
    *    'N*', 'DX', 'S*', 'TH', 'Z*', 'DH', 'D*', '**', '**', 'T*', '**',
    *    '**'
    *  0x0200
    *    --- not used ---
-   *  0x0100
+   *  0x0100  FLAG_PUNCT
    *    '.*', '?*', ',*', '-*'
-   *  0x0080 Vowels
+   *  0x0080  FLAG_VOWEL
    *    'IY', 'IH', 'EH', 'AE', 'AA', 'AH', 'AO', 'UH', 'AX', 'IX', 'ER',
    *    'UX', 'OH', 'RX', 'LX', 'WX', 'YX', 'EY', 'AY', 'OY', 'AW', 'OW',
    *    'UW', 'UL', 'UM', 'UN'
-   *  0x0040
+   *  0x0040  FLAG_CONSONANT
    *    'WH', 'R*', 'L*', 'W*', 'Y*', 'M*', 'N*', 'NX', 'DX', 'Q*', 'S*',
    *    'SH', 'F*', 'TH', '/H', '/X', 'Z*', 'ZH', 'V*', 'DH', 'CH', '**',
    *    'J*', '**', 'B*', '**', '**', 'D*', '**', '**', 'G*', '**', '**',
    *    'GX', '**', '**', 'P*', '**', '**', 'T*', '**', '**', 'K*', '**',
    *    '**', 'KX', '**', '**', 'UM', 'UN'
-   *  0x0020
+   *  0x0020  FLAG_DIP_YX  but looks like front vowels
    *    'IY', 'IH', 'EH', 'AE', 'AA', 'AH', 'AX', 'IX', 'EY', 'AY', 'OY'
-   *  0x0010  Dipthongs
+   *  0x0010  FLAG_DIPTHONG
    *    'EY', 'AY', 'OY', 'AW', 'OW', 'UW'
    *  0x0008
    *    'M*', 'N*', 'NX', 'DX', 'Q*', 'CH', 'J*', 'B*', '**', '**', 'D*',
    *    '**', '**', 'G*', '**', '**', 'GX', '**', '**', 'P*', '**', '**',
    *    'T*', '**', '**', 'K*', '**', '**', 'KX', '**', '**'
-   *  0x0004
-   *  'IY', 'IH', 'EH', 'AE', 'AA', 'AH', 'AO', 'UH', 'AX', 'IX', 'ER',
-   *  'UX', 'OH', 'RX', 'LX', 'WX', 'YX', 'WH', 'R*', 'L*', 'W*', 'Y*',
-   *  'M*', 'N*', 'NX', 'Q*', 'Z*', 'ZH', 'V*', 'DH', 'J*', '**', 'EY',
-   *  'AY', 'OY', 'AW', 'OW', 'UW', 'B*', '**', '**', 'D*', '**', '**',
-   *  'G*', '**', '**', 'GX', '**', '**'
-   *  0x0002
+   *  0x0004  FLAG_VOICED
+   *    'IY', 'IH', 'EH', 'AE', 'AA', 'AH', 'AO', 'UH', 'AX', 'IX', 'ER',
+   *    'UX', 'OH', 'RX', 'LX', 'WX', 'YX', 'WH', 'R*', 'L*', 'W*', 'Y*',
+   *    'M*', 'N*', 'NX', 'Q*', 'Z*', 'ZH', 'V*', 'DH', 'J*', '**', 'EY',
+   *    'AY', 'OY', 'AW', 'OW', 'UW', 'B*', '**', '**', 'D*', '**', '**',
+   *    'G*', '**', '**', 'GX', '**', '**'
+   *  0x0002  FLAG_STOPCONS
    *    'B*', '**', '**', 'D*', '**', '**', 'G*', '**', '**', 'GX', '**',
    *    '**', 'P*', '**', '**', 'T*', '**', '**', 'K*', '**', '**', 'KX',
    *    '**', '**'
-   *  0x0001
-   *    'P*', '**', '**', 'T*', '**', '**', 'K*', '**', '**', 'KX', '**', '**', 'UM', 'UN'
+   *  0x0001  FLAG_PLOSIVE
+   *    'P*', '**', '**', 'T*', '**', '**', 'K*', '**', '**', 'KX', '**',
+   *    '**', 'UM', 'UN'
    */
   var phonemeFlags = [
     0 | 0x8000,                                                                                                                                        // ' *' 00
@@ -507,7 +508,7 @@
    *
    * input holds the string of phonemes, each two bytes wide
    * signInputTable1[] holds the first character of each phoneme
-   * signInputTable2[] holds te second character of each phoneme
+   * signInputTable2[] holds the second character of each phoneme
    * phonemeIndex[] holds the indexes of the phonemes after parsing input[]
    *
    * The parser scans through the input[], finding the names of the phonemes
@@ -1363,10 +1364,10 @@
     console.log('Internal Phoneme presentation:');
     console.log(' pos  idx  phoneme  length  stress');
     console.log('----------------------------------');
-    var loop = function ( i$1 ) {
+    var loop = function ( i ) {
       var name = function (phoneme) {
-        if (phonemeindex[i$1] < 81) {
-          return PhonemeNameTable[phonemeindex[i$1]];
+        if (phonemeindex[i] < 81) {
+          return PhonemeNameTable[phonemeindex[i]];
         }
         if (phoneme === BREAK) {
           return '  ';
@@ -1375,15 +1376,12 @@
       };
       console.log(
         ' %s  %s  %s       %s     %s',
-        pad(i$1),
-        pad(phonemeindex[i$1]),
-        name(phonemeindex[i$1]),
-        pad(phonemeLength[i$1]),
-        pad(stress[i$1])
+        pad(i),
+        pad(phonemeindex[i]),
+        name(phonemeindex[i]),
+        pad(phonemeLength[i]),
+        pad(stress[i])
       );
-      i$1++;
-
-      i = i$1;
     };
 
     for (var i=0;i<phonemeindex.length;i++) loop( i );
