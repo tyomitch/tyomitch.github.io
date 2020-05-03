@@ -194,11 +194,20 @@ function prepareSimpleSizesCanvas()
 		clear();
 		var audioEnded = false;
 		source.onended = function() { audioEnded = true; };
+		var avg = new Array(canvasHeight);
+		avg.fill(0);
 
 		source.start(0);
 		function drawSpectrum(x) {
-			if (audioEnded)
+			if (audioEnded) {
+				for (var i=0; i < canvasHeight; i++) {
+					avg[i] /= x;
+					avg[i] |= 0;
+				}
+				console.log(avg.toString());
+
 				return;
+			}
 			setTimeout(drawSpectrum, 1000 / pixpersec / samplerate, x + 1);
 
 			var bins = new Uint8Array(analyser.frequencyBinCount);
@@ -228,6 +237,7 @@ function prepareSimpleSizesCanvas()
 				}
 				canvasContext.fillStyle = toRGBString(~~value);
 				canvasContext.fillRect(x, canvasHeight - i, 1, 1);
+				avg[i] += value;
 			}
 		}
 		drawSpectrum(0);
