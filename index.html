@@ -169,20 +169,21 @@ function prepareCanvas()
 	}
 
 	function say() {
-		function pset(x, freq, v) {
+		function pset(frame, freq, v) {
+			var x = frame * opts.speed / 144;
 			var y = log_pos_inv(freq*.57/1024, basefreq, maxfreq) * (canvasHeight-1);
 			canvasContext.fillStyle = 'rgba(' + [v,v,v,1].toString() + ')';
-			canvasContext.fillRect(x, canvasHeight - y, 1, 1);
+			canvasContext.fillRect(x, canvasHeight - y, opts.speed / 144, 1);
 		}
 		clear();
-		var x = 0;
+		var frame = 0;
 
 		var parsed = Parser(document.getElementById('speechinput').value);
 		var sentences = Renderer(parsed, opts.pitch, opts.mouth, opts.throat, /*singmode*/false);
 		for (var sentence of sentences) {
 			var [frameCount, frequency, pitches, amplitude, sampledConsonantFlag] = sentence;
 
-			for (var pos=0; pos<frameCount; x++, pos++) {
+			for (var pos=0; pos<frameCount; frame++, pos++) {
 				let flags = sampledConsonantFlag[pos];
 
 				// unvoiced sampled phoneme?
@@ -192,9 +193,9 @@ function prepareCanvas()
 					pos++;
 					continue;
 				} else {
-					pset(x, frequency[0][pos], amplitude[0][pos] * 17);
-					pset(x, frequency[1][pos], amplitude[1][pos] * 17);
-					pset(x, frequency[2][pos], amplitude[2][pos] * 17);
+					pset(frame, frequency[0][pos], amplitude[0][pos] * 17);
+					pset(frame, frequency[1][pos], amplitude[1][pos] * 17);
+					pset(frame, frequency[2][pos], amplitude[2][pos] * 17);
 
 					if (flags !== 0) {
 						// voiced sampled phonemes interleave the sample with the
@@ -210,7 +211,7 @@ function prepareCanvas()
 	var opts = {
 		debug: 1,
 		pitch: 64,
-		speed: 170,
+		speed: 190,
 		mouth: 128,
 		throat: 128
 	};
