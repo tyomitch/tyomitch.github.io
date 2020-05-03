@@ -236,7 +236,7 @@ function prepareSimpleSizesCanvas()
 
 function log_pos(x, min, max) // turns a logarithmic position (i.e. band number/band count) to a frequency
 {
-	return (max-min) * (min * Math.pow(2.0, x * (Math.log2(max)-Math.log2(min))) - min) / (min * Math.pow(2.0, Math.log2(max)-Math.log2(min)) - min) + min;
+	return min * Math.pow(2.0, x * (Math.log2(max) - Math.log2(min)));
 }
 
 function smallprimes(x)   // returns 1 if x is only made of these small primes
