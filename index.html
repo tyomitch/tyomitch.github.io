@@ -170,23 +170,17 @@ function prepareCanvas()
 
 	function say() {
 		var x = frame => frame * opts.speed / 144;
+		var y = freq => canvasHeight - log_pos_inv(freq*.57/1024, basefreq, maxfreq) * (canvasHeight-1);
 		var color = v => 'rgba(' + [v,v,v,1].toString() + ')';
 
-		function pset(frame, y, v) {
-			canvasContext.fillStyle = color(v);
-			canvasContext.fillRect(x(frame), canvasHeight - y, x(1), 1);
-		}
-		function pset_log(frame, prev_freq, freq, v) {
-			var y = freq => canvasHeight - log_pos_inv(freq*.57/1024, basefreq, maxfreq) * (canvasHeight-1);
-			canvasContext.beginPath();
-			canvasContext.lineWidth = 3;
-			canvasContext.moveTo(x(frame-1), y(prev_freq));
-			canvasContext.lineTo(x(frame), y(freq));
-			canvasContext.strokeStyle = color(v);
-			canvasContext.stroke();
+		function renderSample(frame, index, factor) {
+			for (var y = 0; y < canvasHeight; y++) {
+				canvasContext.fillStyle = color(~~(samples[index][y] * factor));
+				canvasContext.fillRect(x(frame), canvasHeight - y, x(1), 1);
+			}
 		}
 		clear();
-		var frame = 0;
+		var frame = 1;
 		var factor = 1;
 		var prev = 0;
 
@@ -205,19 +199,23 @@ function prepareCanvas()
 					prev = flags;
 				}
 
-				if (flags) {
-					for (y = 0; y < canvasHeight; y++)
-						pset(frame, y, ~~(samples[flags][y] * factor));
-				}
+				if (flags)
+					renderSample(frame, flags, factor);
 
-				// unvoiced sampled phoneme?
-				if (flags & 248) {
-					// skip ahead in the phoneme buffer
-					pos++;
-				} else if (pos) {
-					pset_log(frame, frequency[0][pos-1], frequency[0][pos], amplitude[0][pos] * 17);
-					pset_log(frame, frequency[1][pos-1], frequency[1][pos], amplitude[1][pos] * 17);
-					pset_log(frame, frequency[2][pos-1], frequency[2][pos], amplitude[2][pos] * 17);
+				if (!(flags & 248) && pos && !(sampledConsonantFlag[pos-1] & 248)) {
+					for (var formant = 0; formant < 2; formant++) {
+						var x0 = x(frame-1), y0 = y(frequency[formant][pos-1]);
+						var x1 = x(frame), y1 = y(frequency[formant][pos]);
+						var grad = canvasContext.createLinearGradient(x0, y0, x1, y1);
+						grad.addColorStop(0, color(amplitude[formant][pos-1] * 17));
+						grad.addColorStop(1, color(amplitude[formant][pos] * 17));
+						canvasContext.beginPath();
+						canvasContext.lineWidth = 3;
+						canvasContext.moveTo(x0, y0);
+						canvasContext.lineTo(x1, y1);
+						canvasContext.strokeStyle = grad;
+						canvasContext.stroke();
+					}
 				}
 			}
 		}
