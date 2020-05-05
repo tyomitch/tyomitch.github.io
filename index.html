@@ -27,7 +27,6 @@
     <label for="speechinput">Text to speak:</label>
     <input size="60" id="speechinput" value="/HOH5TEHL, AH5LFAH, BRAH4VOW, ROW5MIHOW">
   <hr>
-    <label id="pitch-lbl" for="pitch">Pitch:   </label><input type="range" id="pitch" min="0" max="255" value="0" />
     <label id="speed-lbl" for="speed">Speed:   </label><input type="range" id="speed" min="1" max="255" value="0" />
     <label id="mouth-lbl" for="mouth">Mouth:   </label><input type="range" id="mouth" min="0" max="255" value="0" />
     <label id="throat-lbl" for="throat">Throat: </label><input type="range" id="throat" min="0" max="255" value="0" />
@@ -229,7 +228,7 @@ function prepareCanvas()
 		mouth: 128,
 		throat: 128
 	};
-	for (var name of ['speed', 'pitch', 'mouth', 'throat']) {
+	for (var name of ['speed', 'mouth', 'throat']) {
 		var e = document.getElementById(name);
 		e.onchange = function (e) {
 			opts[e.target.id] = e.target.value;
