@@ -5,10 +5,8 @@
 <style>
   li, label, input { display: inline-block; }
   #playground { width: 400px; margin-top: 1em; }
-  label { width: 30% }
-  #playground input { width: 60%; }
-  button#say { width: 100%; }
-  input[type="range"] { transform: rotate(180deg); }
+  label { width: 20% }
+  input[type="range"] { width: 75%; }
   #canvas { cursor: default; }
 </style>
 <ul style="list-style-type:none;padding-left:0">
@@ -24,13 +22,11 @@
 </div>
 <div id="playground">
   <div>
-    <label for="speechinput">Text to speak:</label>
-    <input size="60" id="speechinput" value="/HOH5TEHL, AH5LFAH, BRAH4VOW, ROW5MIHOW">
-  <hr>
+    <input size="45" id="speechinput" value="/HOH5TEHL, AH5LFAH, BRAH4VOW, ROW5MIHOW">
+    <button type="button" id="say">Say</button>
     <label id="speed-lbl" for="speed">Speed:   </label><input type="range" id="speed" min="1" max="255" value="0" />
     <label id="mouth-lbl" for="mouth">Mouth:   </label><input type="range" id="mouth" min="0" max="255" value="0" />
     <label id="throat-lbl" for="throat">Throat: </label><input type="range" id="throat" min="0" max="255" value="0" />
-    <button type="button" id="say">Say</button>
   </div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
