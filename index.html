@@ -22,7 +22,7 @@
 </div>
 <div id="playground">
   <div>
-    <input size="45" id="speechinput" value="/HOH5TEHL, AH5LFAH, BRAH4VOW, ROW5MIHOW">
+    <input size="45" id="speechinput" value="/HOWTEH4L, AE5LFAX, BRAA5VOW, ROW5MIYOW">
     <button type="button" id="say">Say</button>
     <label id="speed-lbl" for="speed">Speed:   </label><input type="range" id="speed" min="1" max="255" value="0" />
     <label id="mouth-lbl" for="mouth">Mouth:   </label><input type="range" id="mouth" min="0" max="255" value="0" />
@@ -165,7 +165,7 @@ function prepareCanvas()
 
 	function say() {
 		var x = frame => frame * opts.speed / 144;
-		var y = freq => canvasHeight - log_pos_inv(freq*.57/1024, basefreq, maxfreq) * (canvasHeight-1);
+		var y = freq => canvasHeight - log_pos_inv(freq*.6/1024, basefreq, maxfreq) * (canvasHeight-1);
 		var color = v => 'rgba(' + [v,v,v,1].toString() + ')';
 
 		function renderSample(frame, index, factor) {
