@@ -22,6 +22,8 @@
 </div>
 <div id="playground">
   <div>
+    <input size="40" id="textinput" value="Hotel, alpha, bravo, romeo">
+    <button type="button" id="transcribe">Transcribe</button>
     <input size="45" id="speechinput" value="/HOWTEH4L, AE5LFAX, BRAA5VOW, ROW5MIYOW">
     <button type="button" id="say">Say</button>
     <label id="speed-lbl" for="speed">Speed:   </label><input type="range" id="speed" min="1" max="255" value="0" />
@@ -97,24 +99,24 @@ function prepareCanvas()
 		paint = false;
 	});
 	
-	$('#chooseColor button').mousedown(function(e) {
+	$('#chooseColor button').click(function(e) {
 		canvasContext.strokeStyle = e.target.style.backgroundColor;
 	});
-	$('#chooseSize button').mousedown(function(e) {
+	$('#chooseSize button').click(function(e) {
 		canvasContext.lineWidth = e.target.style.borderWidth.match(/\d+/) * 2;
 	});
-	$('#clearCanvas').mousedown(clear);
+	$('#clearCanvas').click(clear);
 	function clear() {
 		canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
 	}
-	$('#copy').mousedown(function(e) {
+	$('#copy').click(function(e) {
 		var imageData = canvasContext.getImageData(0, 0, canvasWidth, canvasHeight);
 		for (var y=0; y<canvasHeight; y++)
 			for (var x=0; x<canvasWidth; x++)
 				imageData.data[4*(canvasWidth*y+x)+1] =imageData.data[4*(canvasWidth*y+x)+2] =0;
 		canvasContext.putImageData(imageData, 0, 0);
 	});
-	$('#play').mousedown(play);
+	$('#play').click(play);
 
 	$(document).keydown(function(e) {
 		if (e.keyCode == 90 && e.ctrlKey && undoBuffer)
@@ -198,7 +200,7 @@ function prepareCanvas()
 					renderSample(frame, flags, factor);
 
 				if (!(flags & 248) && pos && !(sampledConsonantFlag[pos-1] & 248)) {
-					for (var formant = 0; formant < 2; formant++) {
+					for (var formant = 0; formant < 3; formant++) {
 						var x0 = x(frame-1), y0 = y(frequency[formant][pos-1]);
 						var x1 = x(frame), y1 = y(frequency[formant][pos]);
 						var grad = canvasContext.createLinearGradient(x0, y0, x1, y1);
@@ -215,7 +217,7 @@ function prepareCanvas()
 			}
 		}
 	}
-	$('#say').mousedown(say);
+	$('#say').click(say);
 
 	var opts = {
 		debug: 1,
@@ -229,11 +231,81 @@ function prepareCanvas()
 		e.onchange = function (e) {
 			opts[e.target.id] = e.target.value;
 			document.getElementById(e.target.id + '-lbl').innerText =
-				e.target.id.charAt(0).toUpperCase() + e.target.id.substr(1) + ': ' + e.target.value;
+				e.target.id.charAt(0).toUpperCase() + e.target.id.substring(1) + ': ' + e.target.value;
 			say();
 		};
 		e.value = opts[name];
 	}
+
+	var translit = {
+		b:	'B',	p:	'P',	v:	'V',	f:	'F',
+		d:	'D',	t:	'T',	z:	'Z',	s:	'S',
+		d\u0292:'J',	t\u0283:'CH',	\u0292:	'ZH',	\u0283:	'SH',
+		g:	'G',	k:	'K',	h:	'/H',	\u00f0:	'DH',
+		m:	'M',	n:	'N',	\u014b:	'NX',	\u03b8:	'TH',
+		l:	'L',	r:	'R',	j:	'Y',	w:	'W',
+		\u00e6:	'AE',	\u025b:	'EH',	\u026a:	'IH',	i:	'IY',
+		\u028c:	'AH',	\u0254:	'AO',	\u028a:	'UH',	u:	'UX',
+		\u0252:	'OH',	\u0251:	'AA',	\u0259:	'AX',	\u025c:	'ER',
+		e\u026a:'EY',	a\u026a:'AY',	\u0254\u026a:	'OY',
+		a\u028a:'AW',	o\u028a:'OW',
+		// photransedit.com idiosyncrasies:
+		a:	'AA',	\u1d4a:	'AX',	e:	'EH',	\u025d:	'ER',
+		\u0261:	'G',	o:	'OW'
+	};
+	$('#transcribe').click(function() {
+		var text = document.getElementById('textinput').value;
+		var url = 'https://cors-anywhere.herokuapp.com/http://www.photransedit.com/online/txt2phntx.aspx?lng=ame&spc=true&usl=false&ssa=false&rlm=true&rst=false&pun=true&syc=false&rcr=true&inr=true&syl=false';
+		fetch(url).then(r=>r.text()).then(function(response) {
+			var viewState = response.match(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="([A-Za-z0-9+/=]+)" \/>/)[1];
+			var eventValidation = response.match(/<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="([A-Za-z0-9+/=]+)" \/>/)[1];
+			return fetch(url, { method: 'POST',
+					    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+					    body: '__EVENTTARGET=btnTranscribe&__VIEWSTATE=' + encodeURIComponent(viewState) +
+						  '&__EVENTVALIDATION=' + encodeURIComponent(eventValidation) +
+						  '&txtText=' + encodeURIComponent(text)
+					  });
+		}).then(r=>r.text()).then(function(response) {
+			// quick and dirty scraping
+			var txt = document.createElement("textarea");
+			txt.innerHTML = response.match(/<textarea name="txtTranscription"[^>]+>([\s\S]+?)<\/textarea>/m)[1];
+			var output = txt.value.replace(/[\u02cc\u02d0]/g, "").trim() + ' ';
+			var word = '', result = '', stress = false, vowels = 0;
+			for (var i=0; i<output.length; i++) {
+				if (output[i] == '\u02c8') {
+					stress = true;
+					continue;
+				} else if (translit[output.substring(i, i+2)]) {
+					word += translit[output.substring(i, i+2)];
+					i++;
+				} else if (translit[output[i]])
+					word += translit[output[i]];
+				else if (output[i] == '\u0329')
+					word = word.substring(0, word.length-2) + 'AX' + word[word.length-1];
+				else if (output[i] == '!')
+					continue;
+				else if (output[i] == ' ') {
+					if (vowels < 2)
+						word = word.replace('5', '');
+					result += word + ' ';
+					word = '';
+					vowels = 0;
+				} else
+					word += output[i];
+
+				if (['AE','EH','IH','IY','AH','AO','UH','UX','OH','AA','AX','ER','EY','AY','OY','AW','OW']
+				    .includes(word.substring(word.length-2))) {
+					vowels++;
+					if (stress) {
+						word += '5';
+						stress = false;
+					}
+				}
+			}
+			document.getElementById('speechinput').value = result.trim();
+			say();
+		});
+	});
 }
 
 function log_pos(x, min, max) // turns a logarithmic position (i.e. band number/band count) to a frequency
