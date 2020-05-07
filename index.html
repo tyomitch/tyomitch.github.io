@@ -181,7 +181,7 @@ function prepareCanvas()
 		var factor = 1;
 		var prev = 0;
 
-		var parsed = Parser(document.getElementById('speechinput').value);
+		var parsed = Parser($('#speechinput').val());
 		var sentences = Renderer(parsed, opts.pitch, opts.mouth, opts.throat, /*singmode*/false);
 		for (var sentence of sentences) {
 			var [frameCount, frequency, pitches, amplitude, sampledConsonantFlag] = sentence;
@@ -227,14 +227,12 @@ function prepareCanvas()
 		throat: 128
 	};
 	for (var name of ['speed', 'mouth', 'throat']) {
-		var e = document.getElementById(name);
-		e.onchange = function (e) {
+		$('#'+name).change(function(e) {
 			opts[e.target.id] = e.target.value;
 			document.getElementById(e.target.id + '-lbl').innerText =
 				e.target.id.charAt(0).toUpperCase() + e.target.id.substring(1) + ': ' + e.target.value;
 			say();
-		};
-		e.value = opts[name];
+		}).val(opts[name]);
 	}
 
 	var translit = {
@@ -254,7 +252,9 @@ function prepareCanvas()
 		\u0261:	'G',	o:	'OW'
 	};
 	$('#transcribe').click(function() {
-		var text = document.getElementById('textinput').value;
+		$('#transcribe').prop("disabled", true);
+
+		var text = $('#textinput').val();
 		var url = 'https://cors-anywhere.herokuapp.com/http://www.photransedit.com/online/txt2phntx.aspx?lng=ame&spc=true&usl=false&ssa=false&rlm=true&rst=false&pun=true&syc=false&rcr=true&inr=true&syl=false';
 		fetch(url).then(r=>r.text()).then(function(response) {
 			var viewState = response.match(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="([A-Za-z0-9+/=]+)" \/>/)[1];
@@ -267,9 +267,8 @@ function prepareCanvas()
 					  });
 		}).then(r=>r.text()).then(function(response) {
 			// quick and dirty scraping
-			var txt = document.createElement("textarea");
-			txt.innerHTML = response.match(/<textarea name="txtTranscription"[^>]+>([\s\S]+?)<\/textarea>/m)[1];
-			var output = txt.value.replace(/[\u02cc\u02d0]/g, "").trim() + ' ';
+			var output = $('<textarea>').html(response.match(/<textarea name="txtTranscription"[^>]+>([\s\S]+?)<\/textarea>/m)[1])
+						    .text().replace(/[\u02cc\u02d0]/g, "").trim() + ' ';
 			var word = '', result = '', stress = false, vowels = 0;
 			for (var i=0; i<output.length; i++) {
 				if (output[i] == '\u02c8') {
@@ -302,7 +301,8 @@ function prepareCanvas()
 					}
 				}
 			}
-			document.getElementById('speechinput').value = result.trim();
+			$('#speechinput').val(result.trim());
+			$('#transcribe').prop("disabled", false);
 			say();
 		});
 	});
