@@ -246,59 +246,43 @@ function prepareCanvas()
 		\u028c:	'AH',	\u0254:	'AO',	\u028a:	'UH',	u:	'UX',
 		\u0252:	'OH',	\u0251:	'AA',	\u0259:	'AX',	\u025c:	'ER',
 		e\u026a:'EY',	a\u026a:'AY',	\u0254\u026a:	'OY',
-		a\u028a:'AW',	o\u028a:'OW',
-		// photransedit.com idiosyncrasies:
-		a:	'AA',	\u1d4a:	'AX',	e:	'EH',	\u025d:	'ER',
-		\u0261:	'G',	o:	'OW'
+		a\u028a:'AW',	o\u028a:'OW',	\u02a4:	'J',	\u02a7:	'CH'
 	};
 	$('#transcribe').click(function() {
 		$('#transcribe').prop("disabled", true);
 
 		var text = $('#textinput').val();
-		var url = 'https://cors-anywhere.herokuapp.com/http://www.photransedit.com/online/txt2phntx.aspx?lng=ame&spc=true&usl=false&ssa=false&rlm=true&rst=false&pun=true&syc=false&rcr=true&inr=true&syl=false';
-		fetch(url).then(r=>r.text()).then(function(response) {
-			var viewState = response.match(/<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="([A-Za-z0-9+/=]+)" \/>/)[1];
-			var eventValidation = response.match(/<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="([A-Za-z0-9+/=]+)" \/>/)[1];
-			return fetch(url, { method: 'POST',
-					    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-					    body: '__EVENTTARGET=btnTranscribe&__VIEWSTATE=' + encodeURIComponent(viewState) +
-						  '&__EVENTVALIDATION=' + encodeURIComponent(eventValidation) +
-						  '&txtText=' + encodeURIComponent(text)
-					  });
+		var url = 'https://cors-anywhere.herokuapp.com/https://tophonetics.com/';
+		fetch(url, { method: 'POST',
+			     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+			     body: 'submit&output_dialect=am&weak_forms=on&text_to_transcribe=' + encodeURIComponent(text)
 		}).then(r=>r.text()).then(function(response) {
 			// quick and dirty scraping
-			var output = $('<textarea>').html(response.match(/<textarea name="txtTranscription"[^>]+>([\s\S]+?)<\/textarea>/m)[1])
-						    .text().replace(/[\u02cc\u02d0]/g, "").trim() + ' ';
-			var word = '', result = '', stress = false, vowels = 0;
+			var output = response.match(/<div id="transcr_output">(.+?)<\/div>/)[1]
+					     .replace(/<span class="[\w]+">(.+?)<\/span>/g, "$1")
+					     .replace(/<a .+?">(.+?)<\/a>/g, "$1")
+					     .replace(/\&nbsp;/g, " ")
+					     .replace(/<br \/>/g, "")
+					     .replace(/\u02cc/g, "").trim();
+			var result = '', stress = false;
 			for (var i=0; i<output.length; i++) {
 				if (output[i] == '\u02c8') {
 					stress = true;
 					continue;
 				} else if (translit[output.substring(i, i+2)]) {
-					word += translit[output.substring(i, i+2)];
+					result += translit[output.substring(i, i+2)];
 					i++;
 				} else if (translit[output[i]])
-					word += translit[output[i]];
-				else if (output[i] == '\u0329')
-					word = word.substring(0, word.length-2) + 'AX' + word[word.length-1];
+					result += translit[output[i]];
 				else if (output[i] == '!')
 					continue;
-				else if (output[i] == ' ') {
-					if (vowels < 2)
-						word = word.replace('5', '');
-					result += word + ' ';
-					word = '';
-					vowels = 0;
-				} else
-					word += output[i];
+				else
+					result += output[i];
 
-				if (['AE','EH','IH','IY','AH','AO','UH','UX','OH','AA','AX','ER','EY','AY','OY','AW','OW']
-				    .includes(word.substring(word.length-2))) {
-					vowels++;
-					if (stress) {
-						word += '5';
-						stress = false;
-					}
+				if (stress && ['AE','EH','IH','IY','AH','AO','UH','UX','OH','AA','AX','ER','EY','AY','OY','AW','OW']
+						.includes(result.substring(result.length-2))) {
+					result += '5';
+					stress = false;
 				}
 			}
 			$('#speechinput').val(result.trim());
