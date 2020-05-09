@@ -107,6 +107,7 @@ function prepareCanvas()
 	});
 	$('#clearCanvas').click(clear);
 	function clear() {
+		canvasContext.fillStyle = 'black';
 		canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
 	}
 	$('#copy').click(function(e) {
