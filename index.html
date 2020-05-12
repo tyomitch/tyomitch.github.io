@@ -14,7 +14,7 @@
         <li id="chooseColor"><button type="button" style="background-color:black">&nbsp;</button><button type="button" style="background-color:dimgray">&nbsp;</button><button type="button" style="background-color:lightgray">&nbsp;</button><button type="button" style="background-color:white">&nbsp;</button></li>
         <li id="chooseSize"><button type="button" style="border-width:1px">&nbsp;</button><button type="button" style="border-width:2.5px">&nbsp;</button><button type="button" style="border-width:5px">&nbsp;</button><button type="button" style="border-width:10px">&nbsp;</button></li>
 	<li><button id="play" type="button">Play</button></li>
-	<li><input id="loop" type="checkbox" checked>Loop</button></li>
+	<li><input id="loop" type="checkbox" checked>Loop</input></li>
 	<li><button id="copy" type="button">Copy</button></li>
 </ul>
 <div class="image">
@@ -26,9 +26,11 @@
     <button type="button" id="transcribe">Transcribe</button>
     <input size="45" id="speechinput" value="/HOWTEH4L, AE5LFAX, BRAA5VOW, ROW5MIYOW">
     <button type="button" id="say">Say</button>
-    <label id="speed-lbl" for="speed">Speed:   </label><input type="range" id="speed" min="1" max="255" value="0" />
-    <label id="mouth-lbl" for="mouth">Mouth:   </label><input type="range" id="mouth" min="0" max="255" value="0" />
-    <label id="throat-lbl" for="throat">Throat: </label><input type="range" id="throat" min="0" max="255" value="0" />
+    <label id="pitch-lbl" for="pitch">Pitch:</label><input type="range" id="pitch" min="0" max="255" value="0" />
+    <label id="speed-lbl" for="speed">Speed:</label><input type="range" id="speed" min="1" max="255" value="0" />
+    <label id="mouth-lbl" for="mouth">Mouth:</label><input type="range" id="mouth" min="0" max="255" value="0" />
+    <label id="throat-lbl" for="throat">Throat:</label><input type="range" id="throat" min="0" max="255" value="0" />
+    <input id="use-pitch" type="checkbox" checked>Synthesize pitch</input>
   </div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
@@ -168,7 +170,7 @@ function prepareCanvas()
 
 	function say() {
 		var x = frame => frame * opts.speed / 144;
-		var y = freq => canvasHeight - log_pos_inv(freq*.6/1024, basefreq, maxfreq) * (canvasHeight-1);
+		var y = freq => canvasHeight - log_pos_inv(freq / samplerate, basefreq, maxfreq) * (canvasHeight-1);
 		var color = v => 'rgba(' + [v,v,v,1].toString() + ')';
 
 		function renderSample(frame, index, factor) {
@@ -182,8 +184,9 @@ function prepareCanvas()
 		var factor = 1;
 		var prev = 0;
 
+		var use_pitch = $('#use-pitch').prop("checked");
 		var parsed = Parser($('#speechinput').val());
-		var sentences = Renderer(parsed, opts.pitch, opts.mouth, opts.throat, /*singmode*/false);
+		var sentences = Renderer(parsed, opts.pitch|0, opts.mouth, opts.throat, /*singmode*/false);
 		for (var sentence of sentences) {
 			var [frameCount, frequency, pitches, amplitude, sampledConsonantFlag] = sentence;
 
@@ -201,24 +204,38 @@ function prepareCanvas()
 					renderSample(frame, flags, factor);
 
 				if (!(flags & 248) && pos && !(sampledConsonantFlag[pos-1] & 248)) {
+					var pitch = 22050 / pitches[pos]; // Hz
 					for (var formant = 0; formant < 3; formant++) {
-						var x0 = x(frame-1), y0 = y(frequency[formant][pos-1]);
-						var x1 = x(frame), y1 = y(frequency[formant][pos]);
-						var grad = canvasContext.createLinearGradient(x0, y0, x1, y1);
-						grad.addColorStop(0, color(amplitude[formant][pos-1] * 17));
-						grad.addColorStop(1, color(amplitude[formant][pos] * 17));
-						canvasContext.beginPath();
-						canvasContext.lineWidth = 3;
-						canvasContext.moveTo(x0, y0);
-						canvasContext.lineTo(x1, y1);
-						canvasContext.strokeStyle = grad;
-						canvasContext.stroke();
+						if (use_pitch) {
+							var freq = frequency[formant][pos] * 25.84; // Hz
+							var bandwidth = freq / 4;
+							var low = Math.ceil((freq - bandwidth/2) / pitch);
+							var high = Math.floor((freq + bandwidth/2) / pitch);
+							for (var band = low; band <= high; band++) {
+								var distance = 3 * (freq - band*pitch) / bandwidth;
+								var gauss = Math.exp(-distance*distance) * 17;
+								canvasContext.fillStyle = color(~~(amplitude[formant][pos] * gauss));
+								canvasContext.fillRect(x(frame), y(band*pitch), x(1), 1);
+							}
+						} else {
+							var x0 = x(frame-1), y0 = y(frequency[formant][pos-1] * 25.84);
+							var x1 = x(frame), y1 = y(frequency[formant][pos] * 25.84);
+							var grad = canvasContext.createLinearGradient(x0, y0, x1, y1);
+							grad.addColorStop(0, color(amplitude[formant][pos-1] * 17));
+							grad.addColorStop(1, color(amplitude[formant][pos] * 17));
+							canvasContext.beginPath();
+							canvasContext.lineWidth = 3;
+							canvasContext.moveTo(x0, y0);
+							canvasContext.lineTo(x1, y1);
+							canvasContext.strokeStyle = grad;
+							canvasContext.stroke();
+						}
 					}
 				}
 			}
 		}
 	}
-	$('#say').click(say);
+	$('#say,#use-pitch').click(say);
 
 	var opts = {
 		debug: 1,
@@ -227,7 +244,7 @@ function prepareCanvas()
 		mouth: 128,
 		throat: 128
 	};
-	for (var name of ['speed', 'mouth', 'throat']) {
+	for (var name of ['speed', 'pitch', 'mouth', 'throat']) {
 		$('#'+name).change(function(e) {
 			opts[e.target.id] = e.target.value;
 			document.getElementById(e.target.id + '-lbl').innerText =
