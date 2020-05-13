@@ -15,9 +15,6 @@
   (global = global || self, global.Parser = factory());
 }(this, (function () { 'use strict';
 
-  var BREAK = 254;
-  var END   = 255;
-
   var StressTable = '*12345678'.split('');
 
   var PhonemeNameTable = (
@@ -706,7 +703,7 @@
     var pos = -1;
     var phoneme;
 
-    while((phoneme = getPhoneme(++pos)) !== END) {
+    while((phoneme = getPhoneme(++pos)) !== null) {
       // Is phoneme pause?
       if (phoneme === 0) {
         continue;
@@ -752,9 +749,9 @@
         // RULE:
         //       <STRESSED VOWEL> <SILENCE> <STRESSED VOWEL> -> <STRESSED VOWEL> <SILENCE> Q <VOWEL>
         // EXAMPLE: AWAY EIGHT
-        if (!getPhoneme(pos+1)) { // If following phoneme is a pause, get next
+        if (getPhoneme(pos+1) === 0) { // If following phoneme is a pause, get next
           phoneme = getPhoneme(pos+2);
-          if (phoneme !== END && phonemeHasFlag(phoneme, FLAG_VOWEL) && getStress(pos+2)) {
+          if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_VOWEL) && getStress(pos+2)) {
             {
               console.log(((pos+2) + " RULE: Insert glottal stop between two stressed vowels with space between them"));
             }
@@ -764,7 +761,7 @@
         continue;
       }
 
-      var priorPhoneme = (pos === 0) ? END : getPhoneme(pos - 1);
+      var priorPhoneme = (pos === 0) ? null : getPhoneme(pos - 1);
 
       if (phoneme === pR) {
         // RULES FOR PHONEMES BEFORE R
@@ -815,7 +812,7 @@
         // Example: GO
         var phoneme$1 = getPhoneme(pos + 1);
         // If diphthong ending with YX, move continue processing next phoneme
-        if (!phonemeHasFlag(phoneme$1, FLAG_DIP_YX) && (phoneme$1 !== END)) {
+        if (!phonemeHasFlag(phoneme$1, FLAG_DIP_YX) && (phoneme$1 !== null)) {
           // replace G with GX and continue processing next phoneme
           {
             console.log(
@@ -833,7 +830,7 @@
         // Example: COW
         var Y = getPhoneme(pos + 1);
         // If at end, replace current phoneme with KX
-        if (!phonemeHasFlag(Y, FLAG_DIP_YX) || Y === END) {
+        if (!phonemeHasFlag(Y, FLAG_DIP_YX) || Y === null) {
           // VOWELS AND DIPHTHONGS ENDING WITH IY SOUND flag set?
           {
             console.log((pos + " K <VOWEL OR DIPTHONG NOT ENDING WITH IY> -> KX <VOWEL OR DIPTHONG NOT ENDING WITH IY>"));
@@ -870,7 +867,7 @@
         // Example: PARTY, TARDY
         if ((pos > 0) && phonemeHasFlag(getPhoneme(pos-1), FLAG_VOWEL)) {
           phoneme = getPhoneme(pos + 1);
-          if (!phoneme) {
+          if (phoneme === 0) {
             phoneme = getPhoneme(pos + 2);
           }
           if (phonemeHasFlag(phoneme, FLAG_VOWEL) && !getStress(pos+1)) {
@@ -919,7 +916,7 @@
     // increased by (length * 1.5) + 1
 
     // loop index
-    for (var position = 0;getPhoneme(position) !== END;position++) {
+    for (var position = 0;getPhoneme(position) !== null;position++) {
       // not punctuation?
       if(!phonemeHasFlag(getPhoneme(position), FLAG_PUNCT)) {
         continue;
@@ -956,7 +953,7 @@
     var loopIndex = -1;
     var phoneme;
 
-    while((phoneme = getPhoneme(++loopIndex)) !== END) {
+    while((phoneme = getPhoneme(++loopIndex)) !== null) {
       var position$1 = loopIndex;
       // vowel?
       if (phonemeHasFlag(phoneme, FLAG_VOWEL)) {
@@ -984,7 +981,7 @@
         }
         // Got here if not <VOWEL>
         // FIXME: the case when phoneme === END is taken over by !phonemeHasFlag(phoneme, FLAG_CONSONANT)
-        var flags = (phoneme === END) ? (FLAG_CONSONANT | FLAG_UNVOICED_STOPCONS) : phonemeFlags[phoneme];
+        var flags = (phoneme === null) ? (FLAG_CONSONANT | FLAG_UNVOICED_STOPCONS) : phonemeFlags[phoneme];
         // Unvoiced
         if (!matchesBitmask(flags, FLAG_VOICED)) {
           // *, .*, ?*, ,*, -*, DX, S*, SH, F*, TH, /H, /X, CH, P*, T*, K*, KX
@@ -1026,7 +1023,7 @@
         // M*, N*, NX,
         phoneme = getPhoneme(++position$1);
         // is next phoneme a stop consonant?
-        if (phoneme !== END && phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
+        if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
           // B*, D*, G*, GX, P*, T*, K*, KX
           {
             console.log((position$1 + " RULE: <NASAL> <STOP CONSONANT> - set nasal = 5, consonant = 6"));
@@ -1049,7 +1046,7 @@
 
         while ((phoneme = getPhoneme(++position$1)) === 0) { /* move past silence */ }
         // if another stop consonant, process.
-        if (phoneme !== END && phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
+        if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
           // RULE: <STOP CONSONANT> {optional silence} <STOP CONSONANT>
           {
             console.log(
@@ -1105,12 +1102,12 @@
     // loop through all the phonemes to be output
     var position = 0;
     var phoneme;
-    while((phoneme = getPhoneme(position)) !== END) {
+    while((phoneme = getPhoneme(position)) !== null) {
       // if CONSONANT_FLAG set, skip - only vowels get stress
       if (phonemeHasFlag(phoneme, FLAG_CONSONANT)) {
         phoneme = getPhoneme(position + 1);
         // if the following phoneme is the end, or a vowel, skip
-        if ((phoneme !== END) && phonemeHasFlag(phoneme, FLAG_VOWEL)) {
+        if ((phoneme !== null) && phonemeHasFlag(phoneme, FLAG_VOWEL)) {
           // get the stress value at the next position
           var stress = getStress(position + 1);
           if ((stress !== 0) && (stress < 0x80)) {
@@ -1136,7 +1133,7 @@
   function SetPhonemeLength(getPhoneme, getStress, setLength) {
     var position = 0;
     var phoneme;
-    while((phoneme = getPhoneme(position)) !== END) {
+    while((phoneme = getPhoneme(position)) !== null) {
       var stress = getStress(position);
       if ((stress === 0) || (stress > 0x7F)) {
         setLength(position, combinedPhonemeLengthTable[phoneme] & 0xFF);
@@ -1144,44 +1141,6 @@
         setLength(position, (combinedPhonemeLengthTable[phoneme] >> 8));
       }
       position++;
-    }
-  }
-
-  /**
-   *
-   * @param {getPhoneme}       getPhoneme    Callback for retrieving phonemes.
-   * @param {setPhoneme}       setPhoneme    Callback for setting phonemes.
-   * @param {insertPhoneme}    insertPhoneme Callback for inserting phonemes.
-   * @param {setPhonemeStress} setStress     Callback for setting phoneme stress.
-   * @param {getPhonemeLength} getLength     Callback for getting phoneme length.
-   * @param {setPhonemeLength} setLength     Callback for setting phoneme length.
-   *
-   * @return undefined
-   */
-  function InsertBreath(getPhoneme, setPhoneme, insertPhoneme, setStress, getLength, setLength) {
-    var mem54 = 255;
-    var len = 0; // mem55
-    var index; //variable Y
-    var pos = -1;
-    while((index = getPhoneme(++pos)) !== END) {
-      len += getLength(pos);
-      if (len < 232) {
-        if (phonemeHasFlag(index, FLAG_PUNCT)) {
-          len = 0;
-          insertPhoneme(pos + 1, BREAK, 0, 0);
-          continue;
-        }
-        if (index === 0) {
-          mem54 = pos;
-        }
-        continue;
-      }
-      pos = mem54;
-      setPhoneme(pos, 31); // 'Q*' glottal stop
-      setLength(pos, 4);
-      setStress(pos, 0);
-      len = 0;
-      insertPhoneme(pos + 1, BREAK, 0, 0);
     }
   }
 
@@ -1198,7 +1157,7 @@
   function ProlongPlosiveStopConsonantsCode41240(getPhoneme, insertPhoneme, getStress) {
     var pos=-1;
     var index;
-    while ((index = getPhoneme(++pos)) !== END) {
+    while ((index = getPhoneme(++pos)) !== null) {
       // Not a stop consonant, move to next one.
       if (!phonemeHasFlag(index, FLAG_STOPCONS)) {
         continue;
@@ -1209,7 +1168,7 @@
         var X = pos;
         do { nextNonEmpty = getPhoneme(++X); } while (nextNonEmpty === 0);
         // If not END and either flag 0x0008 or '/H' or '/X'
-        if ((nextNonEmpty !== END)
+        if ((nextNonEmpty !== null)
           && (
             phonemeHasFlag(nextNonEmpty, FLAG_0008)
             || (nextNonEmpty === 36)
@@ -1243,7 +1202,7 @@
           throw new Error('Out of bounds: ' + pos)
         }
       }
-      return (pos === phonemeindex.length - 1) ? END : phonemeindex[pos]
+      return (pos === phonemeindex.length) ? null : phonemeindex[pos]
     };
     var setPhoneme = function (pos, value) {
       {
@@ -1319,7 +1278,6 @@
         stress[pos - 1] = value; /* Set stress for prior phoneme */
       }
     );
-    phonemeindex[pos] = END;
 
     {
       PrintPhonemes(phonemeindex, phonemeLength, stress);
@@ -1330,21 +1288,12 @@
     AdjustLengths(getPhoneme, setLength, getLength);
     ProlongPlosiveStopConsonantsCode41240(getPhoneme, insertPhoneme, getStress);
 
-    for (var i = 0;i<phonemeindex.length;i++) {
-      if (phonemeindex[i] > 80) {
-        phonemeindex[i] = END;
-        // FIXME: When will this ever be anything else than END?
-        break; // error: delete all behind it
-      }
-    }
-
-    InsertBreath(getPhoneme, setPhoneme, insertPhoneme, getStress, getLength, setLength);
-
     {
       PrintPhonemes(phonemeindex, phonemeLength, stress);
     }
 
-    return phonemeindex.map(function (v, i) { return [v, phonemeLength[i] | 0, stress[i] | 0]; });
+    return phonemeindex.map(function (v, i) { return v ? [v, phonemeLength[i] | 0, stress[i] | 0] : null; })
+  		     .filter(function (v) { return v; });
   }
 
   /**
@@ -1370,9 +1319,6 @@
       var name = function (phoneme) {
         if (phonemeindex[i] < 81) {
           return PhonemeNameTable[phonemeindex[i]];
-        }
-        if (phoneme === BREAK) {
-          return '  ';
         }
         return '??'
       };

@@ -15,9 +15,6 @@
   (global = global || self, global.Renderer = factory());
 }(this, (function () { 'use strict';
 
-  var BREAK = 254;
-  var END   = 255;
-
   // Values substituted for zero bits in unvoiced consonant samples.
 
   var stressPitch_tab47492 = [
@@ -432,7 +429,7 @@
         outBlendFrames = outBlendLength[phoneme];
         inBlendFrames = outBlendLength[next_phoneme];
       } else if (rank < next_rank) {
-        // next phoneme is stronger, so us its blend lengths
+        // next phoneme is stronger, so use its blend lengths
         outBlendFrames = inBlendLength[next_phoneme];
         inBlendFrames = outBlendLength[next_phoneme];
       } else {
@@ -460,9 +457,9 @@
 
         for (var table = 1; table < 7;table++) {
           // tables:
-          // 0  pitches[]
+          // 0  pitches
           // 1  frequency1
-          // 2  frequency[1]
+          // 2  frequency2
           // 3  frequency3
           // 4  amplitude1
           // 5  amplitude2
@@ -473,8 +470,8 @@
       }
     }
 
-    // add the length of this phoneme
-    return (boundary + tuples[tuples.length - 1][1]) & 0xFF;
+    // add the length of last phoneme
+    return (boundary + tuples[tuples.length - 1][1]);
   }
 
   var PHONEME_PERIOD = 1;
@@ -583,29 +580,6 @@
   function PrepareFrames(phonemes, pitch, mouth, throat, singmode) {
     var freqdata = SetMouthThroat(mouth, throat);
 
-    var sentences = [];
-
-    // Main render loop.
-    var srcpos  = 0; // Position in source
-    // FIXME: should be tuple buffer as well.
-    var tuples = [];
-    var A;
-    do {
-      A = phonemes[srcpos];
-      if (A[0]) {
-        if (A[0] === END || A[0] === BREAK) {
-          var sentence = Render(tuples);
-          if (sentence[0])
-            { sentences.push(sentence); }
-          tuples = [];
-        } else {
-          tuples.push(A);
-        }
-      }
-      ++srcpos;
-    } while(A[0] !== END);
-    return sentences;
-
     /**
      * RENDER THE PHONEMES IN THE LIST
      *
@@ -620,29 +594,23 @@
      * 3. Offset the pitches by the fundamental frequency.
      *
      * 4. Render the each frame.
-     *
-     * @param {Array} tuples
      */
-    function Render (tuples) {
-      if (tuples.length === 0) {
-        return [0, [], [], [], []]; //exit if no data
-      }
 
       var ref = CreateFrames(
         pitch,
-        tuples,
+        phonemes,
         freqdata
       );
-      var pitches = ref[0];
-      var frequency = ref[1];
-      var amplitude = ref[2];
-      var sampledConsonantFlag = ref[3];
+    var pitches = ref[0];
+    var frequency = ref[1];
+    var amplitude = ref[2];
+    var sampledConsonantFlag = ref[3];
 
       var t = CreateTransitions(
         pitches,
         frequency,
         amplitude,
-        tuples
+        phonemes
       );
 
       if (!singmode) {
@@ -673,8 +641,9 @@
         amplitude[2][i$1] = amplitudeRescale[amplitude[2][i$1]];
       }
 
-      return [t, frequency, pitches, amplitude, sampledConsonantFlag];
-    }
+    var result = [t, frequency, pitches, amplitude, sampledConsonantFlag];
+
+    return result;
   }
 
   return PrepareFrames;
