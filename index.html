@@ -172,6 +172,7 @@ function prepareCanvas()
 		var x = frame => frame * opts.speed / 139;
 		var y = freq => canvasHeight - log_pos_inv(freq / samplerate, basefreq, maxfreq) * (canvasHeight-1);
 		var color = v => 'rgba(' + [v,v,v,1].toString() + ')';
+		var alpha = v => 'rgba(' + [0,0,0,v].toString() + ')';
 
 		function renderSample(frame, index, factor) {
 			for (var y = 0; y < canvasHeight; y++) {
@@ -179,14 +180,48 @@ function prepareCanvas()
 				canvasContext.fillRect(x(frame), canvasHeight - y, x(1), 1);
 			}
 		}
+
 		clear();
+
+		var formantsCanvas = document.createElement('canvas');
+		formantsCanvas.width = canvasWidth;
+		formantsCanvas.height = canvasHeight;
+		var formantsContext = formantsCanvas.getContext('2d');
+		formantsContext.lineWidth = 3;
+
+		var harmonicsCanvas = document.createElement('canvas');
+		harmonicsCanvas.width = canvasWidth;
+		harmonicsCanvas.height = canvasHeight;
+		var harmonicsContext = harmonicsCanvas.getContext('2d');
+
 		var factor = 1;
 		var prev = 0;
 
-		var use_pitch = $('#use-pitch').prop("checked");
 		var parsed = Parser($('#speechinput').val());
 		var sentence = Renderer(parsed, opts.pitch|0, opts.mouth, opts.throat, /*singmode*/false);
 		var [frameCount, frequency, pitches, amplitude, sampledConsonantFlag] = sentence;
+
+		if ($('#use-pitch').prop('checked')) {
+			harmonicsContext.strokeStyle = 'white';
+
+			for (var pos=1; pos<frameCount; pos++) {
+				var prev = 22050 / pitches[pos-1];
+				var pitch = 22050 / pitches[pos]; // Hz
+				var low = Math.ceil(basefreq * samplerate / pitch);
+				var high = Math.floor(maxfreq * samplerate / pitch);
+				for (var band = low; band <= high; band++) {
+					var x0 = x(pos-1), y0 = y(band * prev);
+					var x1 = x(pos), y1 = y(band * pitch);
+					harmonicsContext.beginPath();
+					harmonicsContext.moveTo(x0, y0);
+					harmonicsContext.lineTo(x1, y1);
+					harmonicsContext.stroke();
+				}
+			}
+		} else {
+			harmonicsContext.fillStyle = 'white';
+			harmonicsContext.fillRect(0, 0, canvasWidth, canvasHeight);
+		}
 
 		for (var pos=0; pos<frameCount; pos++) {
 			let flags = sampledConsonantFlag[pos];
@@ -202,35 +237,24 @@ function prepareCanvas()
 				renderSample(pos, flags, factor);
 
 			if (!(flags & 248) && pos && !(sampledConsonantFlag[pos-1] & 248)) {
-				var pitch = 22050 / pitches[pos]; // Hz
 				for (var formant = 0; formant < 3; formant++) {
-					if (use_pitch) {
-						var freq = frequency[formant][pos] * 24; // Hz
-						var bandwidth = freq / 4;
-						var low = Math.ceil((freq - bandwidth/2) / pitch);
-						var high = Math.floor((freq + bandwidth/2) / pitch);
-						for (var band = low; band <= high; band++) {
-							var distance = 3 * (freq - band*pitch) / bandwidth;
-							var gauss = Math.exp(-distance*distance) * 17;
-							canvasContext.fillStyle = color(~~(amplitude[formant][pos] * gauss));
-							canvasContext.fillRect(x(pos), y(band*pitch), x(1), 1);
-						}
-					} else {
-						var x0 = x(pos-1), y0 = y(frequency[formant][pos-1] * 24);
-						var x1 = x(pos), y1 = y(frequency[formant][pos] * 24);
-						var grad = canvasContext.createLinearGradient(x0, y0, x1, y1);
-						grad.addColorStop(0, color(amplitude[formant][pos-1] * 17));
-						grad.addColorStop(1, color(amplitude[formant][pos] * 17));
-						canvasContext.beginPath();
-						canvasContext.lineWidth = 3;
-						canvasContext.moveTo(x0, y0);
-						canvasContext.lineTo(x1, y1);
-						canvasContext.strokeStyle = grad;
-						canvasContext.stroke();
-					}
+					var x0 = x(pos-1), y0 = y(frequency[formant][pos-1] * 24);
+					var x1 = x(pos), y1 = y(frequency[formant][pos] * 24);
+					var grad = formantsContext.createLinearGradient(x0, y0, x1, y1);
+					grad.addColorStop(0, alpha(amplitude[formant][pos-1] / 15));
+					grad.addColorStop(1, alpha(amplitude[formant][pos] / 15));
+					formantsContext.beginPath();
+					formantsContext.moveTo(x0, y0);
+					formantsContext.lineTo(x1, y1);
+					formantsContext.strokeStyle = grad;
+					formantsContext.stroke();
 				}
 			}
 		}
+		harmonicsContext.globalCompositeOperation = 'destination-in';
+		harmonicsContext.drawImage(formantsCanvas, 0, 0);
+		canvasContext.drawImage(harmonicsCanvas, 0, 0);
+
 		if (!$('#play').prop("disabled"))
 			play();
 	}
