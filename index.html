@@ -231,6 +231,8 @@ function prepareCanvas()
 				}
 			}
 		}
+		if (!$('#play').prop("disabled"))
+			play();
 	}
 	$('#say,#use-pitch').click(say);
 
