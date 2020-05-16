@@ -5,8 +5,9 @@
 <style>
   li, label, input { display: inline-block; }
   #playground { width: 400px; margin-top: 1em; }
-  label { width: 20% }
-  input[type="range"] { width: 75%; }
+  label { width: 25% }
+  input[type="checkbox"] + label { width: 20%; }
+  input[type="range"] { width: 70%; }
   #canvas { cursor: default; }
 </style>
 <ul style="list-style-type:none;padding-left:0">
@@ -26,11 +27,11 @@
     <button type="button" id="transcribe">Transcribe</button>
     <input size="45" id="speechinput" value="PRIYVEH3T, /X/XAH5BRAA/X/XAA4BRER8. YAA5 UXMEH4YUW GAXVAHRIY4TIX PAX7QAHNGLIY3SKIX.">
     <button type="button" id="say">Say</button>
-    <label id="pitch-lbl" for="pitch">Pitch:</label><input type="range" id="pitch" min="0" max="255" value="0" />
+    <input id="use-pitch" type="checkbox" checked /><label id="pitch-lbl" for="pitch">Pitch:</label><input type="range" id="pitch" min="0" max="255" value="0" />
     <label id="speed-lbl" for="speed">Speed:</label><input type="range" id="speed" min="1" max="255" value="0" />
     <label id="mouth-lbl" for="mouth">Mouth:</label><input type="range" id="mouth" min="0" max="255" value="0" />
     <label id="throat-lbl" for="throat">Throat:</label><input type="range" id="throat" min="0" max="255" value="0" />
-    <input id="use-pitch" type="checkbox" checked>Synthesize pitch</input>
+    <label id="bandwidth-lbl" for="bandwidth">Bandwidth:</label><input type="range" id="bandwidth" min="1" max="20" step="0.5" value="0" />
   </div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.js"></script>
@@ -187,7 +188,7 @@ function prepareCanvas()
 		formantsCanvas.width = canvasWidth;
 		formantsCanvas.height = canvasHeight;
 		var formantsContext = formantsCanvas.getContext('2d');
-		formantsContext.lineWidth = 3;
+		formantsContext.lineWidth = opts.bandwidth;
 
 		var harmonicsCanvas = document.createElement('canvas');
 		harmonicsCanvas.width = canvasWidth;
@@ -259,19 +260,24 @@ function prepareCanvas()
 			play();
 	}
 	$('#say,#use-pitch').click(say);
+	$('#use-pitch').click(function() {
+		$('#pitch').prop('disabled', !this.checked);
+		$('#pitch-lbl').text('Pitch: ' + (this.checked ? $('#pitch').val() : 'N/A'));
+	});
 
 	var opts = {
 		debug: 1,
 		pitch: 128,
 		speed: 128,
 		mouth: 128,
-		throat: 128
+		throat: 128,
+		bandwidth: 3
 	};
-	for (var name of ['speed', 'pitch', 'mouth', 'throat']) {
+	for (var name of ['speed', 'pitch', 'mouth', 'throat', 'bandwidth']) {
 		$('#'+name).change(function(e) {
-			opts[e.target.id] = e.target.value;
-			document.getElementById(e.target.id + '-lbl').innerText =
-				e.target.id.charAt(0).toUpperCase() + e.target.id.substring(1) + ': ' + e.target.value;
+			opts[this.id] = this.value;
+			document.getElementById(this.id + '-lbl').innerText =
+				this.id.charAt(0).toUpperCase() + this.id.substring(1) + ': ' + this.value;
 			say();
 		}).val(opts[name]);
 	}

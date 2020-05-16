@@ -1073,7 +1073,7 @@
         {
           console.log((position$1 + " RULE: <STOP CONSONANT> <LIQUID> - decrease by 2"));
         }
-        // decrease the phoneme length by 2 frames (20 ms)
+        // decrease the phoneme length by 2 frames
         setLength(position$1, getLength(position$1) - 2);
       }
     }
