@@ -22,9 +22,9 @@
 </div>
 <div id="playground">
   <div>
-    <input size="40" id="textinput" value="Hotel, alpha, bravo, romeo">
+    <input size="40" id="textinput" value="Write something nice here">
     <button type="button" id="transcribe">Transcribe</button>
-    <input size="45" id="speechinput" value="/HOWTEH4L, AE5LFAX, BRAA5VOW, ROW5MIYOW">
+    <input size="45" id="speechinput" value="PRIYVEH3T, /X/XAH5BRAA/X/XAA4BRER8. YAA5 UXMEH4YUW GAXVAHRIY4TIX PAX7QAHNGLIY3SKIX.">
     <button type="button" id="say">Say</button>
     <label id="pitch-lbl" for="pitch">Pitch:</label><input type="range" id="pitch" min="0" max="255" value="0" />
     <label id="speed-lbl" for="speed">Speed:</label><input type="range" id="speed" min="1" max="255" value="0" />
@@ -169,7 +169,7 @@ function prepareCanvas()
 	}
 
 	function say() {
-		var x = frame => frame * opts.speed / 144;
+		var x = frame => frame * opts.speed / 139;
 		var y = freq => canvasHeight - log_pos_inv(freq / samplerate, basefreq, maxfreq) * (canvasHeight-1);
 		var color = v => 'rgba(' + [v,v,v,1].toString() + ')';
 
@@ -205,7 +205,7 @@ function prepareCanvas()
 				var pitch = 22050 / pitches[pos]; // Hz
 				for (var formant = 0; formant < 3; formant++) {
 					if (use_pitch) {
-						var freq = frequency[formant][pos] * 25.84; // Hz
+						var freq = frequency[formant][pos] * 24; // Hz
 						var bandwidth = freq / 4;
 						var low = Math.ceil((freq - bandwidth/2) / pitch);
 						var high = Math.floor((freq + bandwidth/2) / pitch);
@@ -216,8 +216,8 @@ function prepareCanvas()
 							canvasContext.fillRect(x(pos), y(band*pitch), x(1), 1);
 						}
 					} else {
-						var x0 = x(pos-1), y0 = y(frequency[formant][pos-1] * 25.84);
-						var x1 = x(pos), y1 = y(frequency[formant][pos] * 25.84);
+						var x0 = x(pos-1), y0 = y(frequency[formant][pos-1] * 24);
+						var x1 = x(pos), y1 = y(frequency[formant][pos] * 24);
 						var grad = canvasContext.createLinearGradient(x0, y0, x1, y1);
 						grad.addColorStop(0, color(amplitude[formant][pos-1] * 17));
 						grad.addColorStop(1, color(amplitude[formant][pos] * 17));
@@ -238,8 +238,8 @@ function prepareCanvas()
 
 	var opts = {
 		debug: 1,
-		pitch: 64,
-		speed: 190,
+		pitch: 128,
+		speed: 128,
 		mouth: 128,
 		throat: 128
 	};
