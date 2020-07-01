@@ -1,0 +1,142 @@
+<html><head><title>Entombed Maze Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<style>body {width: 30em;} canvas { float: right; }</style></head><body>
+
+<canvas width="320" height="178"></canvas>
+
+<table>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic00000" checked="checked" /></td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic00001" checked="checked" /></td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic00010" checked="checked" /></td></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic00011" indeterminate="true" /></td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic00100" /></td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic00101" /></td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic00110" indeterminate="true" /></td></tr>
+<tr><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic00111" indeterminate="true" /></td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic01000" checked="checked" /></td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic01001" checked="checked" /></td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic01010" checked="checked" /></td></tr>
+<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic01011" checked="checked" /></td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic01100" indeterminate="true" /></td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic01101" /></td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic01110" /></td></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic01111" /></td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic10000" checked="checked" /></td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic10001" checked="checked" /></td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic10010" checked="checked" /></td></tr>
+<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic10011" indeterminate="true" /></td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic10100" /></td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic10101" /></td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic10110" /></td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic10111" /></td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic11000" indeterminate="true" /></td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic11001" /></td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic11010" checked="checked" /></td></tr>
+<tr><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic11011" indeterminate="true" /></td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic11100" indeterminate="true" /></td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic11101" /></td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic11110" /></td></tr>
+<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic11111" /></td></tr>
+</table>
+
+<script>
+$('input[type=checkbox]')
+    .each(function() { this.indeterminate = !!this.getAttribute('indeterminate'); })
+    .click(function() {
+       
+        if (this.checked && !this.getAttribute('indeterminate')) {
+            // unchecked, going indeterminate
+            this.checked = false;
+            this.indeterminate = true;
+            this.setAttribute('indeterminate', true);
+
+	} else if (this.getAttribute('indeterminate')) {
+            // indeterminate, going checked
+            this.removeAttribute('indeterminate');
+
+	} else {            
+            // checked, going unchecked
+        }
+        
+    });
+
+
+const canvas = $('canvas').get()[0];
+const context = canvas.getContext('2d');
+context.fillStyle = 'black';
+context.fillRect(0, 0, 320, 178);
+
+function prrow(seed, frame) {
+    if (frame)
+        setTimeout(prrow, 40, seed, frame-1);
+    else
+        setTimeout(rowgen, 40);
+    context.drawImage(canvas, 0, -1);
+    context.fillStyle = 'black';
+    context.fillRect(0, 177, 320, 1);
+    context.fillStyle = 'rgb(190,173,81)';
+    for (let i=0; i<8; i++) {
+      if (seed & 1) {
+        context.fillRect(32+16*i, 177, 16, 1);
+        context.fillRect(272-16*i, 177, 16, 1);
+      }
+      seed >>= 1;
+    }
+    context.fillRect(0, 177, 32, 1);
+    context.fillRect(288, 177, 32, 1);
+}
+
+function rowgen() {
+  // prepend and append random bits to last row
+  let lastrowpadded = Math.random() < 0.5;
+  lastrowpadded <<= 8;
+  lastrowpadded |= lastrows[lastrows.length-1];
+  lastrowpadded <<= 1;
+  lastrowpadded |= Math.random() < 0.5;
+
+  // last two bits generated in current row, initial value = 10
+  let lasttwo = 2
+
+  let newrow = 0
+
+  // iterate from 7...0 , inclusive
+  for (let i=7; i>=0; i--) {
+    let threeabove = (lastrowpadded >> i) & 7;
+    let newbit = $('#magic' + (32 | lasttwo<<3 | threeabove).toString(2).substring(1)).get(0);
+    if (newbit.indeterminate)
+      newbit = Math.random() < 0.5;
+    else
+      newbit = +newbit.checked;
+
+    newrow = (newrow << 1) | newbit;
+
+    lasttwo = ((lasttwo << 1) | newbit) & 3;
+  }
+
+  // now do postprocessing
+  lastrows.push(newrow);
+  lastrows = lastrows.slice(-11);
+/*
+  // postprocessing condition 1
+  history = [ b & 0xf0 for b in lastrows ]
+  if 0 not in history :
+    if sum( [ b & 0x80 for b in history ] ) == 0:
+      lastrows [ -1 ] = 0
+
+  // postprocessing condition 2
+  history = [ b & 0xf for b in lastrows [ -7 : ] ]
+  if 0 not in history :
+    comparator = 0
+    if len ( lastrows ) >= 9 :
+      comparator = lastrows [ -9]
+    if sum( [ b&1 for b in history ] ) == ( comparator &1) * 7 :
+      lastrows [ -1 ] &= 0xf0
+*/
+  prrow(lastrows[lastrows.length-1], 16);
+}
+
+var lastrows = [0];
+rowgen();
+</script>
+
+</body></html>
