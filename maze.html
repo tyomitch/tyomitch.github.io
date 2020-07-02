@@ -1,42 +1,79 @@
 <html><head><title>Entombed Maze Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-<style>body {width: 30em;} canvas { float: right; }</style></head><body>
+<style>
+  body {width: 30em;} canvas { float: right; }
+  td { width: 1ex; } tr:nth-child(odd) td { border-top: .2ex solid white; }
+  tr:nth-child(even) td { border-bottom: .2ex solid white; }
+  .bg0 { background: black; } .bg1 { background: rgb(190,173,81); }
+</style></head><body>
 
 <canvas width="320" height="178"></canvas>
 
 <table>
-<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic00000" checked="checked" /></td></tr>
-<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic00001" checked="checked" /></td></tr>
-<tr><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic00010" checked="checked" /></td></tr>
-<tr><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic00011" indeterminate="true" /></td></tr>
-<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic00100" /></td></tr>
-<tr><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic00101" /></td></tr>
-<tr><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic00110" indeterminate="true" /></td></tr>
-<tr><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic00111" indeterminate="true" /></td></tr>
-<tr><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic01000" checked="checked" /></td></tr>
-<tr><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic01001" checked="checked" /></td></tr>
-<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic01010" checked="checked" /></td></tr>
-<tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic01011" checked="checked" /></td></tr>
-<tr><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic01100" indeterminate="true" /></td></tr>
-<tr><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic01101" /></td></tr>
-<tr><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic01110" /></td></tr>
-<tr><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic01111" /></td></tr>
-<tr><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic10000" checked="checked" /></td></tr>
-<tr><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic10001" checked="checked" /></td></tr>
-<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic10010" checked="checked" /></td></tr>
-<tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic10011" indeterminate="true" /></td></tr>
-<tr><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic10100" /></td></tr>
-<tr><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic10101" /></td></tr>
-<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic10110" /></td></tr>
-<tr><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic10111" /></td></tr>
-<tr><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td><input type="checkbox" id="magic11000" indeterminate="true" /></td></tr>
-<tr><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td><input type="checkbox" id="magic11001" /></td></tr>
-<tr><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td><input type="checkbox" id="magic11010" checked="checked" /></td></tr>
-<tr><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td><input type="checkbox" id="magic11011" indeterminate="true" /></td></tr>
-<tr><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td><input type="checkbox" id="magic11100" indeterminate="true" /></td></tr>
-<tr><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td><input type="checkbox" id="magic11101" /></td></tr>
-<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td><input type="checkbox" id="magic11110" /></td></tr>
-<tr><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td><input type="checkbox" id="magic11111" /></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00000" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00001" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00010" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00011" indeterminate="true" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00100" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00101" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00110" indeterminate="true" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00111" indeterminate="true" /></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01000" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01001" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01010" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01011" checked="checked" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01100" indeterminate="true" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01101" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01110" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01111" /></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10000" checked="checked" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10001" checked="checked" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10010" checked="checked" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10011" indeterminate="true" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10100" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10101" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10110" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10111" /></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11000" indeterminate="true" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11001" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11010" checked="checked" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11011" indeterminate="true" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11100" indeterminate="true" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11101" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11110" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11111" /></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td></tr>
 </table>
 
 <script>
