@@ -125,8 +125,8 @@ function prrow(seed, frame) {
     context.fillStyle = 'rgb(190,173,81)';
     for (let i=0; i<8; i++) {
       if (seed & 1) {
-        context.fillRect(32+16*i, 177, 16, 1);
-        context.fillRect(272-16*i, 177, 16, 1);
+        context.fillRect(144-16*i, 177, 16, 1);
+        context.fillRect(160+16*i, 177, 16, 1);
       }
       seed >>= 1;
     }
