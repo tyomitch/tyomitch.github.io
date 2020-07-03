@@ -153,22 +153,21 @@ function rowgen() {
   // now do postprocessing
   lastrows.push(newrow);
   lastrows = lastrows.slice(-11);
-/*
+
   // postprocessing condition 1
-  history = [ b & 0xf0 for b in lastrows ]
-  if 0 not in history :
-    if sum( [ b & 0x80 for b in history ] ) == 0:
-      lastrows [ -1 ] = 0
+  let history = lastrows.map(b => b & 0xf0);
+  if (history.indexOf(0) == -1)
+    if (!history.filter(b => b & 0x80).length)
+      lastrows[lastrows.length-1] = 0;
 
   // postprocessing condition 2
-  history = [ b & 0xf for b in lastrows [ -7 : ] ]
-  if 0 not in history :
-    comparator = 0
-    if len ( lastrows ) >= 9 :
-      comparator = lastrows [ -9]
-    if sum( [ b&1 for b in history ] ) == ( comparator &1) * 7 :
-      lastrows [ -1 ] &= 0xf0
-*/
+  history = lastrows.slice(-7).map(b => b & 0xf);
+  if (history.indexOf(0) == -1) {
+    let comparator = lastrows.length>=9 ? lastrows[lastrows.length-9]&1 : 0;
+    if (!history.filter(b => (b&1) != comparator).length)
+      lastrows[lastrows.length-1] &= 0xf0;
+  }
+
   prrow(lastrows[lastrows.length-1], 16);
 }
 
