@@ -6,7 +6,9 @@
 const canvas = document.getElementsByTagName('canvas')[0];
 const context = canvas.getContext('2d');
 context.fillStyle = 'black';
-context.fillRect(0, 0, 320, 178);
+context.fillRect(0, 0, 320, 162);
+context.fillStyle = 'rgb(190,173,81)';
+context.fillRect(0, 162, 320, 16);
 
 const width = 18;
 
@@ -28,12 +30,11 @@ function prrow(seed, frame, nextgen) {
 
 // initialize
 
-let counter = 0;
-let sets = {};
+let sets = [];
 let cells = [];
 for (let col=0; col < width; col++) {
-    sets[++counter] = 1 << col;
-    cells[col] = counter;
+    sets[col+1] = 1 << col;
+    cells[col] = col + 1;
 }
 let verticals = 0;
 
@@ -52,7 +53,6 @@ function rowgen1() {
                 cells[col] = id_a;
             sets[id_b] >>= 1;
         }
-        delete sets[id_b];
     }
 
     for (let col = 0; col < width-2; col++) {
@@ -64,8 +64,6 @@ function rowgen1() {
             let id = cells[col];
             cells[col] = 0;
             sets[id] ^= 1 << col;
-            if (!sets[id])
-                delete sets[id];
         }
     }
     for (let col = 0; col < width-1; col++)
@@ -73,9 +71,8 @@ function rowgen1() {
             merge(col, col+1);
 
     let seed = 0;
-    for (let col = 0; col < width; col++)
-        if (cells[col])
-            seed |= sets[cells[col]];
+    for (let id = 1; id <= width; id++)
+        seed |= sets[id];
 
     prrow(seed, 16, rowgen2);
 }
@@ -84,6 +81,9 @@ function rowgen2() {
     verticals = 0;
     for (let id in sets) {
         let set = sets[id];
+        if (!set)
+            continue;
+
         let mask;
         do { mask = Math.random() * (1 << width); }
         while (!(set & mask));
@@ -93,8 +93,9 @@ function rowgen2() {
     }
     for (let col = 0; col < width; col++) {
         if (!(verticals & (1<<col))) {
-            sets[++counter] = 1 << col;
-            cells[col] = counter;
+            let id = sets.indexOf(0);
+            sets[id] = 1 << col;
+            cells[col] = id;
         }
     }
     prrow(verticals, 16, rowgen1);
