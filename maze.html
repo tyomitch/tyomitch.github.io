@@ -1,79 +1,90 @@
-<html><head><title>Entombed Maze Generator</title>
+﻿<html><head><title>Entombed Maze Generator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <style>
-  body {width: 30em;} canvas { float: right; }
-  td { width: 1ex; } tr:nth-child(odd) td { border-top: .2ex solid white; }
+  body { width: 30em; } p { width: 20em; } canvas, div { float: right; }
+  td { width: 1ex; line-height: 0; vertical-align: bottom; color: dodgerblue; }
+  tr:nth-child(odd) td { border-top: .2ex solid white; }
   tr:nth-child(even) td { border-bottom: .2ex solid white; }
   .bg0 { background: black; } .bg1 { background: rgb(190,173,81); }
+  .new { color: dodgerblue; position: relative; top: .6ex; }
 </style></head><body>
 
 <canvas width="320" height="178"></canvas>
 
+<div><h2>Генератор лабиринтов из Entombed</h2>
+<p>Для каждой генерируемой ячейки (<span class="new">*</span>)
+рассматриваются пять ранее сгенерированных (три сверху и две слева),
+и в соответствии с таблицей выбирается состояние новой ячейки:
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAAPklEQVQoFWN4/vz5/2nTpv0vKysjiEHqQOoZQIxjx479JwaA1IHUM4BsIAWA1I9q+v8fHC2DPSDIShHkpD0AEIVaC+5fze8AAAAASUVORK5CYII=" /> &ndash; проход,
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAAqElEQVQoFWOYd/r/f9GG//8ZSgljkDqQegZiNcAMBauHcXDRAnX//++/8/9/wAIkl+BSDBNfcOY/GHz4TqSmgk0QDSDSoB+HJpBTYDY4zEBoSFiJEAfLwxSBJN5/g5io0AZhg7SBnAdTA6dhjAvPICaDNJ5/CmGDxGDyKDSMA3IaTCNIC8jjyM6FqQPTyBxkjSgeR494ZE0gNkgjSpygawDxyUoR5KQ9AN41yQz6o80KAAAAAElFTkSuQmCC" /> &ndash; стена,
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAAX0lEQVQoFWN4/vz5/2nTpv0vKysjiEHqQOoZQIxjx479JwaA1IHUM4BsIAWA1A+Aps+fP//fvXs3TgySBwEU54E04AtBkDyGJrJsAhtDBIHiPCLUg5WQr4msFEFO2gMA+IJBfqiksRkAAAAASUVORK5CYII=" /> &ndash; случайный выбор.</p>
+</div>
+
 <table>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00000" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00001" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00010" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00011" indeterminate="true" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00100" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00101" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic00110" indeterminate="true" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic00111" indeterminate="true" /></td></tr>
-<tr><td class="bg0"></td><td class="bg0"></td></tr>
+<tr><td class="bg0"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01000" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01001" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01010" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01011" checked="checked" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01100" indeterminate="true" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01101" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic01110" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic01111" /></td></tr>
-<tr><td class="bg0"></td><td class="bg1"></td></tr>
+<tr><td class="bg0"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10000" checked="checked" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10001" checked="checked" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10010" checked="checked" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10011" indeterminate="true" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10100" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10101" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic10110" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic10111" /></td></tr>
-<tr><td class="bg1"></td><td class="bg0"></td></tr>
+<tr><td class="bg1"></td><td class="bg0"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11000" indeterminate="true" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11001" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11010" checked="checked" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg0"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11011" indeterminate="true" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11100" indeterminate="true" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg0"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11101" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg0"></td><td rowspan="2"><input type="checkbox" id="magic11110" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 <tr><td></td><td class="bg1"></td><td class="bg1"></td><td class="bg1"></td><td rowspan="2"><input type="checkbox" id="magic11111" /></td></tr>
-<tr><td class="bg1"></td><td class="bg1"></td></tr>
+<tr><td class="bg1"></td><td class="bg1"></td><td>*</td></tr>
 </table>
 
 <script>
