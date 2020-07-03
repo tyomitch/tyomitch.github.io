@@ -6,9 +6,7 @@
 const canvas = document.getElementsByTagName('canvas')[0];
 const context = canvas.getContext('2d');
 context.fillStyle = 'black';
-context.fillRect(0, 0, 320, 162);
-context.fillStyle = 'rgb(190,173,81)';
-context.fillRect(0, 162, 320, 16);
+context.fillRect(0, 0, 320, 178);
 
 const width = 18;
 
@@ -36,9 +34,9 @@ for (let col=0; col < width; col++) {
     sets[col+1] = 1 << col;
     cells[col] = col + 1;
 }
-let verticals = 0;
 
-rowgen1();
+let verticals = 1 << (Math.random() * width);
+prrow(verticals, 16, rowgen1);
 
 function rowgen1() {
     function merge(a, b) {
