@@ -1,0 +1,88 @@
+<style>
+table { border-collapse: collapse; margin: 1em; }
+td { border: 1px solid lightgray; width: 10px; height: 10px; display: inline-block; }
+.x { background: black; }
+.err { border-color: red; }
+</style>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://cozmo.github.io/jsQR/jsQR.js"></script>
+<table></table>
+<div></div>
+<script>
+  const size = 29;
+  const data = [
+    "XXXXXXX               XXXXXXX",
+    "X     X  XX    XXXX   X     X",
+    "X XXX X    XX X XX X  X XXX X",
+    "X XXX X     XXX X     X XXX X",
+    "X XXX X XX    X     X X XXX X",
+    "X     X     XX   XXX  X     X",
+    "XXXXXXX X X X X X X X XXXXXXX",
+    "        XX     XX  XX        ",
+    "  XX  XXX  X      XX XX X    ",
+    "XXXX X X X X X    X X   X  XX",
+    "X X XXX  X X  XX X XX   XX  X",
+    "XX X   X  XX X XX X XXX X XXX",
+    " XXX  X   XX  X X XXX X X XX ",
+    "    XX   X   X  X X    X   X ",
+    "  X X XXXXXXX  X X     X XX X",
+    "   X X X XXXXXX XXX  X X X XX",
+    "X X XXX   XX   X  XX    X   X",
+    "  XXX     X X  XX XX  X X  X ",
+    "X XX  X   X XXX X X X X XX XX",
+    "  XX   X X  X XX X  XX XX XX ",
+    " X    X XX  XXX  X XXXXXXX X ",
+    "        X      XXXX X   XX   ",
+    "XXXXXXX X  XX XXX XXX X XXXXX",
+    "X     X   X  X     XX   X XX ",
+    "X XXX X  XXXXXXXXX  XXXXXXX  ",
+    "X XXX X X XX  XX   XX X X X  ",
+    "X XXX X X X   X XX  XXXXX   X",
+    "X     X    X  XX XX   XXX XXX",
+    "XXXXXXX      XX X  X  XXX    "];
+
+  for(let y=0; y<size; y++) {
+    let row = "<tr>";
+    for(let x=0; x<size; x++)
+      row += "<td" + (data[y][x]=='X' ? ' class="x"' : "") + "></td>";
+    $("table").append(row);
+  }
+
+  $(document).on('dragstart', function(e){e.preventDefault();});
+  $("td").mouseenter(function(e){if(e.buttons) handler.call(this);});
+  $("td").mousedown(handler);
+  function handler(){$(this).toggleClass('x'); update(); }
+
+  const big = 33;
+  function update() {
+    var binaryData = new Uint8ClampedArray(4*big*big);
+    binaryData.fill(255);
+    for(let y=0; y<size; y++)
+      for(let x=0; x<size; x++) {
+        const pos = ((y+1)*big + x+1) * 4;
+        const cell = $("table").children().eq(y).children().eq(x).hasClass("x");
+        binaryData[pos] = binaryData[pos+1] = binaryData[pos+2] = (1-cell)*255;
+    }
+    const result = jsQR(binaryData, big, big);
+    if (result) {
+      $("div").text(result.data);
+      $("td").each(function(){
+         const x = $(this).prevAll().length;
+         const y = $(this).parent().prevAll().length;
+         const pos = ((y+1)*big + x+1) * 4;
+         let modified = new Uint8ClampedArray(binaryData)
+         modified[pos] = modified[pos+1] = modified[pos+2] = 255 - modified[pos];
+         if (jsQR(modified, big, big)) {
+           $(this).removeClass("err");
+         } else {
+           $(this).addClass("err");
+         }
+      });
+    } else {
+      $("div").text("error");
+      $("td").removeClass("err");
+    }
+  }
+
+  update();
+</script>
