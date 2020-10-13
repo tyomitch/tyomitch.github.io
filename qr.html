@@ -5,64 +5,28 @@ td { border: 1px solid lightgray; width: 10px; height: 10px; display: inline-blo
 .err { border-color: red; }
 </style>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://jeromeetienne.github.io/jquery-qrcode/src/qrcode.js"></script>
 <script src="https://cozmo.github.io/jsQR/jsQR.js"></script>
+<input value="https://habr.com/ru/post/518476/"/>
+<select><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option></select>
 <table></table>
 <div></div>
 <script>
-  const size = 33;
-  const data = [
-    "XXXXXXX X  X  X   X   X X XXXXXXX",
-    "X     X  XX X  XX XX XX X X     X",
-    "X XXX X X   XXX X    XXXX X XXX X",
-    "X XXX X     X X    X X XX X XXX X",
-    "X XXX X X  XX X  XX  X  X X XXX X",
-    "X     X  XXX X  X     X   X     X",
-    "XXXXXXX X X X X X X X X X XXXXXXX",
-    "        X   X X XXX    X         ",
-    "     XX  XXX  XX   XX  X  X X X X",
-    "X XXX  X     X   XX  XXX X XX X  ",
-    "X  X  XXXX XXXXXX XXX X    X   X ",
-    "  X      XX  XX XX XXX XX XX XX  ",
-    " XXXXXXX  XX X    XX X XXXX    X ",
-    "X   X   XX  X   XX XXX X  X   X X",
-    "X XX XXXX  XX XXX   X X    X XXX ",
-    "XXXX   X X   X    XX   XX XXX X X",
-    "X X X X X  X  XX    X    X  XX   ",
-    "X  XX   X XX X   X   X XX XX   XX",
-    " X    X X XXXXX   XXXX X  X  XXXX",
-    " XX XX  X X X  X X X  XXXXXXXXXX ",
-    "X XX  XX X  XX   XX X   X   XX X ",
-    "XXXX    X  X X X   XXXXXXX XX XX ",
-    "X XXXXX XXX X  XX     X X  XXXXX ",
-    "X    X  X X XX    X   XX     XXXX",
-    "XXXXX X XXXXXX  XX XX XXXXXXXX   ",
-    "        XX XX   XXXXX XXX   XXX X",
-    "XXXXXXX  XX X XXX  XXX XX X XXXX ",
-    "X     X XXX   XX  XX   XX   X XX ",
-    "X XXX X    X XXX XX XX  XXXXX  XX",
-    "X XXX X  XX    X X  X XX X XX   X",
-    "X XXX X  X       X XXX      XXXXX",
-    "X     X  X XX  XXX    X  XX   X  ",
-    "XXXXXXX  XX  X  XX X X XX X  X X "];
+  var size;
 
-  for(let y=0; y<size; y++) {
-    let row = "<tr>";
-    for(let x=0; x<size; x++)
-      row += "<td" + (data[y][x]=='X' ? ' class="x"' : "") + "></td>";
-    $("table").append(row);
-  }
-
-  $(document).on('dragstart', function(e){e.preventDefault();});
-  $("td").mouseenter(function(e){if(e.buttons) handler.call(this);});
-  $("td").mousedown(handler);
+  $(document).on('dragstart', function(e){e.preventDefault();})
+    .on("mouseenter", "td", function(e){if(e.buttons) handler.call(this);})
+    .on("mousedown", "td", handler);
   function handler(){ $(this).toggleClass('x'); update(); }
 
   var timeouts = [];
 
-  const big = 35;
   function update() {
     timeouts.forEach(clearTimeout);
     timeouts = [];
+
+    var big = size + 2;
+    if (big < 33) big = 33;
 
     var binaryData = new Uint8ClampedArray(4*big*big);
     binaryData.fill(255);
@@ -96,5 +60,48 @@ td { border: 1px solid lightgray; width: 10px; height: 10px; display: inline-blo
     }
   }
 
-  update();
+  function makeCode() {
+    const text = $("input").val();
+    if (text) {
+      var qrcode = new QRCode(0, QRErrorCorrectLevel.H);
+      qrcode.addData(text);
+
+      for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+        var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, qrcode.errorCorrectLevel);
+
+        var buffer = new QRBitBuffer();
+        var totalDataCount = 0;
+        for (var i = 0; i < rsBlocks.length; i++) {
+          totalDataCount += rsBlocks[i].dataCount;
+        }
+
+        for (var i = 0; i < qrcode.dataList.length; i++) {
+          var data = qrcode.dataList[i];
+          buffer.put(data.mode, 4);
+          buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+          data.write(buffer);
+        }
+        if (buffer.getLengthInBits() <= totalDataCount * 8)
+          break;
+      }
+      qrcode.typeNumber = typeNumber;
+      qrcode.makeImpl(false, +$("select").val());
+      size = qrcode.getModuleCount();
+      $("table").html('<table></table>');
+      for(let y=0; y<size; y++) {
+        let row = "<tr>";
+        for(let x=0; x<size; x++)
+          row += "<td" + (qrcode.isDark(y, x) ? ' class="x"' : "") + "></td>";
+        $("table").append(row);
+      }
+      update();
+    }
+  }
+  makeCode();
+
+  $("input").on("blur", makeCode)
+            .keydown(function(e) {
+                if (e.keyCode == 13) makeCode();
+            });
+  $("select").change(makeCode);
 </script>
