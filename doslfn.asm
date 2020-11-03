@@ -37,12 +37,12 @@ ifdef DEBUG
 endif
 endm
 
-USEOLDDOS	=	1	;1 to enable LFN filtering on legacy find fns
-USEWIN		=	1	;1 to enable Windows recognition code
-USECP		=	1	;1 to enable codepage changing
-USEDBCS 	=	1	;1 to enable double-byte character sets
-USEWINTIME	=	1	;1 to enable real Win <-> DOS time conversions
-USEXP		=	1	;1 to enable reading of XP lowercase 8.3 names
+USEOLDDOS	=	0	;1 to enable LFN filtering on legacy find fns
+USEWIN		=	0	;1 to enable Windows recognition code
+USECP		=	0	;1 to enable codepage changing
+USEDBCS 	=	0	;1 to enable double-byte character sets
+USEWINTIME	=	0	;1 to enable real Win <-> DOS time conversions
+USEXP		=	0	;1 to enable reading of XP lowercase 8.3 names
 
 USEFREESPC	=	0	;1 to enable DPB free space writing
 ;In MS-DOS 7, writing directly to disk causes the free cluster count to become
@@ -55,6 +55,9 @@ USEFREESPC	=	0	;1 to enable DPB free space writing
 USEFASTOPEN	=	0	;1 to enable the FASTOPEN cache
 ;FastOpen is now disabled by default, since it doesn't recognise disc changes
 ;and doesn't seem to impact performance (at least with modern DOS).
+
+USELANG		=	0	;Make COM smaller by omitting German strings
+USEUNI		=	0	;Make COM smaller by omitting Unicode support
 
 ;********************
 ;** DOS structures **
@@ -1336,7 +1339,9 @@ endif
 ;** Initialized Constant and Data Area **
 ;****************************************
 
+if USELANG
 language	db	'E'	;'D'eutsch,'F'rancais,'N'ihongo,'R'ussky?
+endif
 UniXlat		dw	0	;0 bedeutet hier: OEM = ISO-Latin-1
 rwrec		tRWRec	<?,4,ofs Sektor>
 if USECP
@@ -6503,7 +6508,7 @@ endp
 std_size = $ - Fat_RW_std
 
 
-String_Table	dw	?
+String_Table	dw	Texte_englisch
 LocalHeapSize	dw	?	;Angabe bei /M
 		dw	600	;1 Sektor und noch etwas Platz (nicht fÅr CD)
 		dw	50000	;>50KB ist bei 64KB Segment kaum mîglich
@@ -6524,10 +6529,12 @@ Epoch		dd	0e1d58000h ;100-ns intervals from
 endif
 
 ife USECP
+if USEUNI
 NewCP		dw	0	;wird bei Int2F gesetzt
 TblFileName$:	dz	"CP000UNI.TBL"
 
 	chcp_code install
+endif
 endif
 
 proc LocalInit pascal
@@ -6620,23 +6627,16 @@ proc CriticalInit
 	mov	[argv0],di
 	call	CopyWorkDir
 	mov	[argv0file],di
-;Unicodetabelle automatisch oder wie angefordert laden (nach Heap-Init!)
-	mov	dx,0
-UserUniFile = wo $-2		;Angabe bei /Z
-	or	dx,dx
-	jnz	@@userload	;Von Hand laden
+if USEUNI
 	DOS	6601h
 	jc	@@noload	;DOS wei· nichts Åber Codeseiten
 	push	[argv0]		;Dateiname (mit Pfad) fÅr Fehlermeldung
 	 call	LoadCP
-	 jmp	@@el1
-@@userload:
-	push	dx		;fÅr Fehlermeldung
-	 call	LoadUniFile
 @@el1: 	 jnc	@@el2
 	 call	AusgabeStringNr
 	 call	AusgabeNL
 @@el2:	pop	dx
+endif ;USEUNI
 @@noload:
 ;Done with the command line, now we can write to it.
 	and	[wo high DPB_FAT1Sec],0 ;these three may only be WORDs
@@ -7223,6 +7223,7 @@ endif
 	jz	@@nostartup	;resident
 ;== 3. Standard-Sprache festlegen ==
 	push	cx
+if USELANG
 	 mov	dx,ofs fname_buffer
 	 DOS	3800h		;Land-Info holen
 	 jc	@@k
@@ -7237,6 +7238,7 @@ endif
 	 jne	@@k
 @@de:	 mov	[language],'D'
 @@k:
+endif ;USELANG
 ;== 4. argv[0] extrahieren, daraus Pfad fÅr WorkDir basteln ==
 	 call	getargv0
 ;== 5. set appropriate timezone ==
@@ -7251,8 +7253,9 @@ endif
 	 stc			;for pre-DOS7
 	 int	21h
 	 jnc	@@ext
-	 cmp	ax,7300h	;did it fail because there's no such call?
-	 jne	@@ext		;no, it didn't like the drive
+; On Win95 4.00.950, it always fails with AX=1
+;	 cmp	ax,7300h	;did it fail because there's no such call?
+;	 jne	@@ext		;no, it didn't like the drive
 	 mov	si,ofs Fat_RW_std ;copy the standard routines
 	 mov	di,ofs Fat_RW
 	 mov	cx,std_size
@@ -7288,8 +7291,10 @@ endif
 @@cddone:
 	pop	cx
 @@nostartup:
+if USELANG
 	mov	al,[es:language]
 	call	SetStringResourcePointer
+endif
 ;== 8. Kommandozeile parsen und Aktionen durchfÅhren ==
 	mov	si,81h
 	cld
@@ -7325,9 +7330,13 @@ cmd_verteiler:	dvt	0dh,Install
 if USEWINTIME
 		dvt	'O',SetTimeZone
 endif
+if USEUNI
 		dvt	'Z',LoadUni
+endif
 		dvt	'M',SetHeapSize
+if USELANG
 		dvt	'L',SetLang
+endif
 		dvt	'P',SetWorkDir
 		dvt	'S',ShowStatus
 		db	0
@@ -7367,6 +7376,7 @@ proc Expect_ASCIIZ
 @@1:	ret
 endp
 
+if USEUNI
 proc LoadUni
 ;BE: Unicode-Tabelle im Volkov-Commander-Tabellenformat (siehe TBL.TXT) laden
 ;    Hier noch nicht, erst nach Heap-Initialisierung mîglich!
@@ -7387,6 +7397,7 @@ proc LoadUni
 @@ex:	BSET	ch,bit 4	;Merker, verhindert Auto-Load
 	ret
 endp
+endif ;USEUNI
 
 proc SetHeapSize
 	mov	bl,29
@@ -7633,6 +7644,7 @@ proc SetPlusMinus
 	ret
 endp
 
+if USELANG
 proc SetLang
 	lodsb
 	call	Upcase
@@ -7645,6 +7657,7 @@ SetStringResourcePointer:
 @@de:	mov	[String_Table],ax
 	ret
 endp
+endif ;USELANG
 	P8086
 
 proc help	;Hilfe Option "H" oder "?", kein Return
@@ -7883,6 +7896,7 @@ proc GetLocalHeapSize
 	lea	di,[fname_buffer]
 	push	di
 	 call	CopyWorkDir
+if USEUNI
 	 mov	dx,[UserUniFile]
 	 or	dx,dx
 	 jnz	@@userload
@@ -7910,6 +7924,7 @@ else
 	 db	0b9h
 endif
 @@noload:
+endif ;USEUNI
 	 xor	ax,ax
 @@load:
 	 add	ax,DEFHEAPSIZE	;"Pflichtteil" dazu
@@ -8020,6 +8035,7 @@ djmh$:	dz	"http://doslfn.adoxa.cjb.net/"
 
 Text0	db	"DOSLFN 0.41c (haftmann#software & jmh 11/2012): $"
 
+if USELANG
 Texte_deutsch:
  dz	10							;0
  dz    "hoch"							;1
@@ -8114,6 +8130,7 @@ ifdef PROFILE
  ProfileNr = 42
  endif
 endif
+endif ;USELANG
 
 texte_englisch:
  dz	10							;0
@@ -8155,7 +8172,9 @@ endif
   db   "		- ml[:|=]bytes	declare size of long path, 16..1024",10
   db   "		- mn[:|=]bytes	declare size of long name, 13..512",10
   db   "		- p[:|=]path	declare working directory for .TBL/.JLT/.386",10
+if USELANG
   db   "		- l{d|e}	set language (german|english)",10
+endif
   db   "Environment: 	TZ=xxxNyyy	time zone N for time conversion, no DST usage",10
   db   "Email:    %s",10
   db   "          %s",10
