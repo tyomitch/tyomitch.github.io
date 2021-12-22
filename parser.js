@@ -1,9 +1,9 @@
 /**
- * This is SamJs.js v0.1.1
+ * This is SamJs.js v0.1.3
  *
  * A Javascript port of "SAM Software Automatic Mouth".
  *
- * (c) 2017-2020 Christian Schiffler
+ * (c) 2017-2021 Christian Schiffler
  *
  * @link(https://github.com/discordier/sam)
  *
@@ -12,95 +12,92 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.Parser = factory());
-}(this, (function () { 'use strict';
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Parser = factory());
+})(this, (function () { 'use strict';
 
-  var StressTable = '*12345678'.split('');
-
-  var PhonemeNameTable = (
-    ' *' + // 00
-    '.*' + // 01
-    '?*' + // 02
-    ',*' + // 03
-    '-*' + // 04
-    'IY' + // 05
-    'IH' + // 06
-    'EH' + // 07
-    'AE' + // 08
-    'AA' + // 09
-    'AH' + // 10
-    'AO' + // 11
-    'UH' + // 12
-    'AX' + // 13
-    'IX' + // 14
-    'ER' + // 15
-    'UX' + // 16
-    'OH' + // 17
-    'RX' + // 18
-    'LX' + // 19
-    'WX' + // 20
-    'YX' + // 21
-    'WH' + // 22
-    'R*' + // 23
-    'L*' + // 24
-    'W*' + // 25
-    'Y*' + // 26
-    'M*' + // 27
-    'N*' + // 28
-    'NX' + // 29
-    'DX' + // 30
-    'Q*' + // 31
-    'S*' + // 32
-    'SH' + // 33
-    'F*' + // 34
-    'TH' + // 35
-    '/H' + // 36
-    '/X' + // 37
-    'Z*' + // 38
-    'ZH' + // 39
-    'V*' + // 40
-    'DH' + // 41
-    'CH' + // 42
-    '**' + // 43
-    'J*' + // 44
-    '**' + // 45
-    '**' + // 46
-    '**' + // 47
-    'EY' + // 48
-    'AY' + // 49
-    'OY' + // 50
-    'AW' + // 51
-    'OW' + // 52
-    'UW' + // 53
-    'B*' + // 54
-    '**' + // 55
-    '**' + // 56
-    'D*' + // 57
-    '**' + // 58
-    '**' + // 59
-    'G*' + // 60
-    '**' + // 61
-    '**' + // 62
-    'GX' + // 63
-    '**' + // 64
-    '**' + // 65
-    'P*' + // 66
-    '**' + // 67
-    '**' + // 68
-    'T*' + // 69
-    '**' + // 70
-    '**' + // 71
-    'K*' + // 72
-    '**' + // 73
-    '**' + // 74
-    'KX' + // 75
-    '**' + // 76
-    '**' + // 77
-    'UL' + // 78
-    'UM' + // 79
-    'UN'   // 80
+  let StressTable = '*12345678'.split('');
+  let PhonemeNameTable = (' *' + // 00
+  '.*' + // 01
+  '?*' + // 02
+  ',*' + // 03
+  '-*' + // 04
+  'IY' + // 05
+  'IH' + // 06
+  'EH' + // 07
+  'AE' + // 08
+  'AA' + // 09
+  'AH' + // 10
+  'AO' + // 11
+  'UH' + // 12
+  'AX' + // 13
+  'IX' + // 14
+  'ER' + // 15
+  'UX' + // 16
+  'OH' + // 17
+  'RX' + // 18
+  'LX' + // 19
+  'WX' + // 20
+  'YX' + // 21
+  'WH' + // 22
+  'R*' + // 23
+  'L*' + // 24
+  'W*' + // 25
+  'Y*' + // 26
+  'M*' + // 27
+  'N*' + // 28
+  'NX' + // 29
+  'DX' + // 30
+  'Q*' + // 31
+  'S*' + // 32
+  'SH' + // 33
+  'F*' + // 34
+  'TH' + // 35
+  '/H' + // 36
+  '/X' + // 37
+  'Z*' + // 38
+  'ZH' + // 39
+  'V*' + // 40
+  'DH' + // 41
+  'CH' + // 42
+  '**' + // 43
+  'J*' + // 44
+  '**' + // 45
+  '**' + // 46
+  '**' + // 47
+  'EY' + // 48
+  'AY' + // 49
+  'OY' + // 50
+  'AW' + // 51
+  'OW' + // 52
+  'UW' + // 53
+  'B*' + // 54
+  '**' + // 55
+  '**' + // 56
+  'D*' + // 57
+  '**' + // 58
+  '**' + // 59
+  'G*' + // 60
+  '**' + // 61
+  '**' + // 62
+  'GX' + // 63
+  '**' + // 64
+  '**' + // 65
+  'P*' + // 66
+  '**' + // 67
+  '**' + // 68
+  'T*' + // 69
+  '**' + // 70
+  '**' + // 71
+  'K*' + // 72
+  '**' + // 73
+  '**' + // 74
+  'KX' + // 75
+  '**' + // 76
+  '**' + // 77
+  'UL' + // 78
+  'UM' + // 79
+  'UN' // 80
   ).match(/.{1,2}/g);
-
   /**
    * Flags for phoneme names.
    *
@@ -155,90 +152,89 @@
    *    'P*', '**', '**', 'T*', '**', '**', 'K*', '**', '**', 'KX', '**',
    *    '**', 'UM', 'UN'
    */
-  var phonemeFlags = [
-    0 | 0x8000,                                                                                                                                        // ' *' 00
-    0 | 0x8000 | 0x4000                                              | 0x0100,                                                                         // '.*' 01
-    0 | 0x8000 | 0x4000                                              | 0x0100,                                                                         // '?*' 02
-    0 | 0x8000 | 0x4000                                              | 0x0100,                                                                         // ',*' 03
-    0 | 0x8000 | 0x4000                                              | 0x0100,                                                                         // '-*' 04
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'IY' 05
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'IH' 06
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'EH' 07
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'AE' 08
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'AA' 09
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'AH' 10
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'AO' 11
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'UH' 12
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'AX' 13
-    0                                                                         | 0x0080          | 0x0020                   | 0x0004,                   // 'IX' 14
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'ER' 15
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'UX' 16
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'OH' 17
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'RX' 18
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'LX' 19
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'WX' 20
-    0                                                                         | 0x0080                                     | 0x0004,                   // 'YX' 21
-    0                                                                                  | 0x0040                            | 0x0004,                   // 'WH' 22
-    0                            | 0x1000                                              | 0x0040                            | 0x0004,                   // 'R*' 23
-    0                            | 0x1000                                              | 0x0040                            | 0x0004,                   // 'L*' 24
-    0                            | 0x1000                                              | 0x0040                            | 0x0004,                   // 'W*' 25
-    0                            | 0x1000                                              | 0x0040                            | 0x0004,                   // 'Y*' 26
-    0                                     | 0x0800                                     | 0x0040                   | 0x0008 | 0x0004,                   // 'M*' 27
-    0                                     | 0x0800 | 0x0400                            | 0x0040                   | 0x0008 | 0x0004,                   // 'N*' 28
-    0                                     | 0x0800                                     | 0x0040                   | 0x0008 | 0x0004,                   // 'NX' 29
-    0                                              | 0x0400                            | 0x0040                   | 0x0008,                            // 'DX' 30
-    0          | 0x4000                                                                | 0x0040                   | 0x0008 | 0x0004,                   // 'Q*' 31
-    0                   | 0x2000                   | 0x0400                            | 0x0040,                                                       // 'S*' 32
-    0                   | 0x2000                                                       | 0x0040,                                                       // 'SH' 33
-    0                   | 0x2000                                                       | 0x0040,                                                       // 'F*' 34
-    0                   | 0x2000                   | 0x0400                            | 0x0040,                                                       // 'TH' 35
-    0                                                                                  | 0x0040,                                                       // '/H' 36
-    0                                                                                  | 0x0040,                                                       // '/X' 37
-    0                   | 0x2000                   | 0x0400                            | 0x0040                            | 0x0004,                   // 'Z*' 38
-    0                   | 0x2000                                                       | 0x0040                            | 0x0004,                   // 'ZH' 39
-    0                   | 0x2000                                                       | 0x0040                            | 0x0004,                   // 'V*' 40
-    0                   | 0x2000                   | 0x0400                            | 0x0040                            | 0x0004,                   // 'DH' 41
-    0                   | 0x2000                                                       | 0x0040                   | 0x0008,                            // 'CH' 42
-    0                   | 0x2000                                                       | 0x0040,                                                       // '**' 43
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004,                   // 'J*' 44
-    0                   | 0x2000                                                       | 0x0040                            | 0x0004,                   // '**' 45
-    0,                                                                                                                                                 // '**' 46
-    0,                                                                                                                                                 // '**' 47
-    0                                                                         | 0x0080          | 0x0020 | 0x0010          | 0x0004,                   // 'EY' 48
-    0                                                                         | 0x0080          | 0x0020 | 0x0010          | 0x0004,                   // 'AY' 49
-    0                                                                         | 0x0080          | 0x0020 | 0x0010          | 0x0004,                   // 'OY' 50
-    0                                                                         | 0x0080                   | 0x0010          | 0x0004,                   // 'AW' 51
-    0                                                                         | 0x0080                   | 0x0010          | 0x0004,                   // 'OW' 52
-    0                                                                         | 0x0080                   | 0x0010          | 0x0004,                   // 'UW' 53
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // 'B*' 54
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 55
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 56
-    0                                              | 0x0400                            | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // 'D*' 57
-    0                                              | 0x0400                            | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 58
-    0                                              | 0x0400                            | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 59
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // 'G*' 60
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 61
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 62
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // 'GX' 63
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 64
-    0                                                                                  | 0x0040                   | 0x0008 | 0x0004 | 0x0002,          // '**' 65
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // 'P*' 66
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 67
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 68
-    0                                              | 0x0400                            | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // 'T*' 69
-    0                                              | 0x0400                            | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 70
-    0                                              | 0x0400                            | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 71
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // 'K*' 72
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 73
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 74
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // 'KX' 75
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 76
-    0                                                                                  | 0x0040                   | 0x0008          | 0x0002 | 0x0001, // '**' 77
-    0                                                                         | 0x0080,                                                                // 'UL' 78
-    0                                                                         | 0x0080 | 0x0040                                              | 0x0001, // 'UM' 79
-    0                                                                         | 0x0080 | 0x0040                                              | 0x0001  // 'UN' 80
-  ];
 
+  let phonemeFlags = [0 | 0x8000, // ' *' 00
+  0 | 0x8000 | 0x4000 | 0x0100, // '.*' 01
+  0 | 0x8000 | 0x4000 | 0x0100, // '?*' 02
+  0 | 0x8000 | 0x4000 | 0x0100, // ',*' 03
+  0 | 0x8000 | 0x4000 | 0x0100, // '-*' 04
+  0 | 0x0080 | 0x0020 | 0x0004, // 'IY' 05
+  0 | 0x0080 | 0x0020 | 0x0004, // 'IH' 06
+  0 | 0x0080 | 0x0020 | 0x0004, // 'EH' 07
+  0 | 0x0080 | 0x0020 | 0x0004, // 'AE' 08
+  0 | 0x0080 | 0x0020 | 0x0004, // 'AA' 09
+  0 | 0x0080 | 0x0020 | 0x0004, // 'AH' 10
+  0 | 0x0080 | 0x0004, // 'AO' 11
+  0 | 0x0080 | 0x0004, // 'UH' 12
+  0 | 0x0080 | 0x0020 | 0x0004, // 'AX' 13
+  0 | 0x0080 | 0x0020 | 0x0004, // 'IX' 14
+  0 | 0x0080 | 0x0004, // 'ER' 15
+  0 | 0x0080 | 0x0004, // 'UX' 16
+  0 | 0x0080 | 0x0004, // 'OH' 17
+  0 | 0x0080 | 0x0004, // 'RX' 18
+  0 | 0x0080 | 0x0004, // 'LX' 19
+  0 | 0x0080 | 0x0004, // 'WX' 20
+  0 | 0x0080 | 0x0004, // 'YX' 21
+  0 | 0x0040 | 0x0004, // 'WH' 22
+  0 | 0x1000 | 0x0040 | 0x0004, // 'R*' 23
+  0 | 0x1000 | 0x0040 | 0x0004, // 'L*' 24
+  0 | 0x1000 | 0x0040 | 0x0004, // 'W*' 25
+  0 | 0x1000 | 0x0040 | 0x0004, // 'Y*' 26
+  0 | 0x0800 | 0x0040 | 0x0008 | 0x0004, // 'M*' 27
+  0 | 0x0800 | 0x0400 | 0x0040 | 0x0008 | 0x0004, // 'N*' 28
+  0 | 0x0800 | 0x0040 | 0x0008 | 0x0004, // 'NX' 29
+  0 | 0x0400 | 0x0040 | 0x0008, // 'DX' 30
+  0 | 0x4000 | 0x0040 | 0x0008 | 0x0004, // 'Q*' 31
+  0 | 0x2000 | 0x0400 | 0x0040, // 'S*' 32
+  0 | 0x2000 | 0x0040, // 'SH' 33
+  0 | 0x2000 | 0x0040, // 'F*' 34
+  0 | 0x2000 | 0x0400 | 0x0040, // 'TH' 35
+  0 | 0x0040, // '/H' 36
+  0 | 0x0040, // '/X' 37
+  0 | 0x2000 | 0x0400 | 0x0040 | 0x0004, // 'Z*' 38
+  0 | 0x2000 | 0x0040 | 0x0004, // 'ZH' 39
+  0 | 0x2000 | 0x0040 | 0x0004, // 'V*' 40
+  0 | 0x2000 | 0x0400 | 0x0040 | 0x0004, // 'DH' 41
+  0 | 0x2000 | 0x0040 | 0x0008, // 'CH' 42
+  0 | 0x2000 | 0x0040, // '**' 43
+  0 | 0x0040 | 0x0008 | 0x0004, // 'J*' 44
+  0 | 0x2000 | 0x0040 | 0x0004, // '**' 45
+  0, // '**' 46
+  0, // '**' 47
+  0 | 0x0080 | 0x0020 | 0x0010 | 0x0004, // 'EY' 48
+  0 | 0x0080 | 0x0020 | 0x0010 | 0x0004, // 'AY' 49
+  0 | 0x0080 | 0x0020 | 0x0010 | 0x0004, // 'OY' 50
+  0 | 0x0080 | 0x0010 | 0x0004, // 'AW' 51
+  0 | 0x0080 | 0x0010 | 0x0004, // 'OW' 52
+  0 | 0x0080 | 0x0010 | 0x0004, // 'UW' 53
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // 'B*' 54
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 55
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 56
+  0 | 0x0400 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // 'D*' 57
+  0 | 0x0400 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 58
+  0 | 0x0400 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 59
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // 'G*' 60
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 61
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 62
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // 'GX' 63
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 64
+  0 | 0x0040 | 0x0008 | 0x0004 | 0x0002, // '**' 65
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // 'P*' 66
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 67
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 68
+  0 | 0x0400 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // 'T*' 69
+  0 | 0x0400 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 70
+  0 | 0x0400 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 71
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // 'K*' 72
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 73
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 74
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // 'KX' 75
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 76
+  0 | 0x0040 | 0x0008 | 0x0002 | 0x0001, // '**' 77
+  0 | 0x0080, // 'UL' 78
+  0 | 0x0080 | 0x0040 | 0x0001, // 'UM' 79
+  0 | 0x0080 | 0x0040 | 0x0001 // 'UN' 80
+  ];
   /**
    * Combined table of phoneme length.
    *
@@ -248,89 +244,88 @@
    *  phonemeLengthTable[i] = combinedPhonemeLengthTable[i] & 0xFF
    *  phonemeStressedLengthTable[i] = combinedPhonemeLengthTable[i] >> 8
    */
-  var combinedPhonemeLengthTable = [
-    0x0000 | 0x0000, // ' *' 00
-    0x0012 | 0x1200, // '.*' 01
-    0x0012 | 0x1200, // '?*' 02
-    0x0012 | 0x1200, // ',*' 03
-    0x0008 | 0x0800, // '-*' 04
-    0x0008 | 0x0B00, // 'IY' 05
-    0x0008 | 0x0900, // 'IH' 06
-    0x0008 | 0x0B00, // 'EH' 07
-    0x0008 | 0x0E00, // 'AE' 08
-    0x000B | 0x0F00, // 'AA' 09
-    0x0006 | 0x0B00, // 'AH' 10
-    0x000C | 0x1000, // 'AO' 11
-    0x000A | 0x0C00, // 'UH' 12
-    0x0005 | 0x0600, // 'AX' 13
-    0x0005 | 0x0600, // 'IX' 14
-    0x000B | 0x0E00, // 'ER' 15
-    0x000A | 0x0C00, // 'UX' 16
-    0x000A | 0x0E00, // 'OH' 17
-    0x000A | 0x0C00, // 'RX' 18
-    0x0009 | 0x0B00, // 'LX' 19
-    0x0008 | 0x0800, // 'WX' 20
-    0x0007 | 0x0800, // 'YX' 21
-    0x0009 | 0x0B00, // 'WH' 22
-    0x0007 | 0x0A00, // 'R*' 23
-    0x0006 | 0x0900, // 'L*' 24
-    0x0008 | 0x0800, // 'W*' 25
-    0x0006 | 0x0800, // 'Y*' 26
-    0x0007 | 0x0800, // 'M*' 27
-    0x0007 | 0x0800, // 'N*' 28
-    0x0007 | 0x0800, // 'NX' 29
-    0x0002 | 0x0300, // 'DX' 30
-    0x0005 | 0x0500, // 'Q*' 31
-    0x0002 | 0x0200, // 'S*' 32
-    0x0002 | 0x0200, // 'SH' 33
-    0x0002 | 0x0200, // 'F*' 34
-    0x0002 | 0x0200, // 'TH' 35
-    0x0002 | 0x0200, // '/H' 36
-    0x0002 | 0x0200, // '/X' 37
-    0x0006 | 0x0600, // 'Z*' 38
-    0x0006 | 0x0600, // 'ZH' 39
-    0x0007 | 0x0800, // 'V*' 40
-    0x0006 | 0x0600, // 'DH' 41
-    0x0006 | 0x0600, // 'CH' 42
-    0x0002 | 0x0200, // '**' 43
-    0x0008 | 0x0900, // 'J*' 44
-    0x0003 | 0x0400, // '**' 45
-    0x0001 | 0x0200, // '**' 46
-    0x001E | 0x0100, // '**' 47
-    0x000D | 0x0E00, // 'EY' 48
-    0x000C | 0x0F00, // 'AY' 49
-    0x000C | 0x0F00, // 'OY' 50
-    0x000C | 0x0F00, // 'AW' 51
-    0x000E | 0x0E00, // 'OW' 52
-    0x0009 | 0x0E00, // 'UW' 53
-    0x0006 | 0x0800, // 'B*' 54
-    0x0001 | 0x0200, // '**' 55
-    0x0002 | 0x0200, // '**' 56
-    0x0005 | 0x0700, // 'D*' 57
-    0x0001 | 0x0200, // '**' 58
-    0x0001 | 0x0100, // '**' 59
-    0x0006 | 0x0700, // 'G*' 60
-    0x0001 | 0x0200, // '**' 61
-    0x0002 | 0x0200, // '**' 62
-    0x0006 | 0x0700, // 'GX' 63
-    0x0001 | 0x0200, // '**' 64
-    0x0002 | 0x0200, // '**' 65
-    0x0008 | 0x0800, // 'P*' 66
-    0x0002 | 0x0200, // '**' 67
-    0x0002 | 0x0200, // '**' 68
-    0x0004 | 0x0600, // 'T*' 69
-    0x0002 | 0x0200, // '**' 70
-    0x0002 | 0x0200, // '**' 71
-    0x0006 | 0x0700, // 'K*' 72
-    0x0001 | 0x0200, // '**' 73
-    0x0004 | 0x0400, // '**' 74
-    0x0006 | 0x0700, // 'KX' 75
-    0x0001 | 0x0100, // '**' 76
-    0x0004 | 0x0400, // '**' 77
-    0x00C7 | 0x0500, // 'UL' 78
-    0x00FF | 0x0500  // 'UM' 79
-  ];
 
+  let combinedPhonemeLengthTable = [0x0000 | 0x0000, // ' *' 00
+  0x0012 | 0x1200, // '.*' 01
+  0x0012 | 0x1200, // '?*' 02
+  0x0012 | 0x1200, // ',*' 03
+  0x0008 | 0x0800, // '-*' 04
+  0x0008 | 0x0B00, // 'IY' 05
+  0x0008 | 0x0900, // 'IH' 06
+  0x0008 | 0x0B00, // 'EH' 07
+  0x0008 | 0x0E00, // 'AE' 08
+  0x000B | 0x0F00, // 'AA' 09
+  0x0006 | 0x0B00, // 'AH' 10
+  0x000C | 0x1000, // 'AO' 11
+  0x000A | 0x0C00, // 'UH' 12
+  0x0005 | 0x0600, // 'AX' 13
+  0x0005 | 0x0600, // 'IX' 14
+  0x000B | 0x0E00, // 'ER' 15
+  0x000A | 0x0C00, // 'UX' 16
+  0x000A | 0x0E00, // 'OH' 17
+  0x000A | 0x0C00, // 'RX' 18
+  0x0009 | 0x0B00, // 'LX' 19
+  0x0008 | 0x0800, // 'WX' 20
+  0x0007 | 0x0800, // 'YX' 21
+  0x0009 | 0x0B00, // 'WH' 22
+  0x0007 | 0x0A00, // 'R*' 23
+  0x0006 | 0x0900, // 'L*' 24
+  0x0008 | 0x0800, // 'W*' 25
+  0x0006 | 0x0800, // 'Y*' 26
+  0x0007 | 0x0800, // 'M*' 27
+  0x0007 | 0x0800, // 'N*' 28
+  0x0007 | 0x0800, // 'NX' 29
+  0x0002 | 0x0300, // 'DX' 30
+  0x0005 | 0x0500, // 'Q*' 31
+  0x0002 | 0x0200, // 'S*' 32
+  0x0002 | 0x0200, // 'SH' 33
+  0x0002 | 0x0200, // 'F*' 34
+  0x0002 | 0x0200, // 'TH' 35
+  0x0002 | 0x0200, // '/H' 36
+  0x0002 | 0x0200, // '/X' 37
+  0x0006 | 0x0600, // 'Z*' 38
+  0x0006 | 0x0600, // 'ZH' 39
+  0x0007 | 0x0800, // 'V*' 40
+  0x0006 | 0x0600, // 'DH' 41
+  0x0006 | 0x0600, // 'CH' 42
+  0x0002 | 0x0200, // '**' 43
+  0x0008 | 0x0900, // 'J*' 44
+  0x0003 | 0x0400, // '**' 45
+  0x0001 | 0x0200, // '**' 46
+  0x001E | 0x0100, // '**' 47
+  0x000D | 0x0E00, // 'EY' 48
+  0x000C | 0x0F00, // 'AY' 49
+  0x000C | 0x0F00, // 'OY' 50
+  0x000C | 0x0F00, // 'AW' 51
+  0x000E | 0x0E00, // 'OW' 52
+  0x0009 | 0x0E00, // 'UW' 53
+  0x0006 | 0x0800, // 'B*' 54
+  0x0001 | 0x0200, // '**' 55
+  0x0002 | 0x0200, // '**' 56
+  0x0005 | 0x0700, // 'D*' 57
+  0x0001 | 0x0200, // '**' 58
+  0x0001 | 0x0100, // '**' 59
+  0x0006 | 0x0700, // 'G*' 60
+  0x0001 | 0x0200, // '**' 61
+  0x0002 | 0x0200, // '**' 62
+  0x0006 | 0x0700, // 'GX' 63
+  0x0001 | 0x0200, // '**' 64
+  0x0002 | 0x0200, // '**' 65
+  0x0008 | 0x0800, // 'P*' 66
+  0x0002 | 0x0200, // '**' 67
+  0x0002 | 0x0200, // '**' 68
+  0x0004 | 0x0600, // 'T*' 69
+  0x0002 | 0x0200, // '**' 70
+  0x0002 | 0x0200, // '**' 71
+  0x0006 | 0x0700, // 'K*' 72
+  0x0001 | 0x0200, // '**' 73
+  0x0004 | 0x0400, // '**' 74
+  0x0006 | 0x0700, // 'KX' 75
+  0x0001 | 0x0100, // '**' 76
+  0x0004 | 0x0400, // '**' 77
+  0x00C7 | 0x0500, // 'UL' 78
+  0x00FF | 0x0500 // 'UM' 79
+  ];
   /*
 
   Ind  | phoneme |  flags   |
@@ -445,26 +440,27 @@
    * @param {string} sign2
    * @return {boolean|Number}
    */
-  function full_match(sign1, sign2) {
-    var index = PhonemeNameTable.findIndex(function (value) {
-      return ((value === sign1 + sign2) && (value[1] !== '*'))
+
+  let full_match = (sign1, sign2) => {
+    let index = PhonemeNameTable.findIndex(value => {
+      return value === sign1 + sign2 && value[1] !== '*';
     });
     return index !== -1 ? index : false;
-  }
-
+  };
   /**
    * Match character with wildcard.
    *
    * @param {string} sign1
    * @return {boolean|Number}
    */
-  function wild_match (sign1) {
-    var index = PhonemeNameTable.findIndex(function (value) {
-      return (value === sign1 + '*')
+
+
+  let wild_match = sign1 => {
+    let index = PhonemeNameTable.findIndex(value => {
+      return value === sign1 + '*';
     });
     return index !== -1 ? index : false;
-  }
-
+  };
   /**
    * The input[] buffer contains a string of phonemes and stress markers along
    * the lines of:
@@ -518,45 +514,49 @@
    *
    * @return {undefined}
    */
-  function Parser1(input, addPhoneme, addStress) {
-    for (var srcPos=0;srcPos<input.length;srcPos++) {
+
+
+  var Parser1 = ((input, addPhoneme, addStress) => {
+    for (let srcPos = 0; srcPos < input.length; srcPos++) {
       {
-        var tmp = input.toLowerCase();
-        console.log(
-          ("processing \"" + (tmp.substr(0, srcPos)) + "%c" + (tmp.substr(srcPos, 2).toUpperCase()) + "%c" + (tmp.substr(srcPos + 2)) + "\""),
-           'color: red;',
-           'color:normal;'
-        );
+        let tmp = input.toLowerCase();
+        console.log("processing \"".concat(tmp.substr(0, srcPos), "%c").concat(tmp.substr(srcPos, 2).toUpperCase(), "%c").concat(tmp.substr(srcPos + 2), "\""), 'color: red;', 'color:normal;');
       }
-      var sign1 = input[srcPos];
-      var sign2 = input[srcPos + 1] || '';
-      var match = (void 0);
+
+      let sign1 = input[srcPos];
+      let sign2 = input[srcPos + 1] || '';
+      let match;
+
       if ((match = full_match(sign1, sign2)) !== false) {
         // Matched both characters (no wildcards)
         srcPos++; // Skip the second character of the input as we've matched it
-        addPhoneme(match);
-        continue;
-      }
-      if ((match = wild_match(sign1)) !== false) {
-        // Matched just the first character (with second character matching '*'
+
         addPhoneme(match);
         continue;
       }
 
-      // Should be a stress character. Search through the stress table backwards.
+      if ((match = wild_match(sign1)) !== false) {
+        // Matched just the first character (with second character matching '*'
+        addPhoneme(match);
+        continue;
+      } // Should be a stress character. Search through the stress table backwards.
+
+
       match = StressTable.length;
-      while ((sign1 !== StressTable[match]) && (match > 0)) {
+
+      while (sign1 !== StressTable[match] && match > 0) {
         --match;
       }
 
       if (match === 0) {
         {
-          throw Error(("Could not parse char " + sign1));
+          throw Error("Could not parse char ".concat(sign1));
         }
       }
+
       addStress(match); // Set stress for prior phoneme
     }
-  }
+  });
 
   /**
    * Test if a bit is set.
@@ -564,9 +564,9 @@
    * @param {Number} mask The mask to test.
    * @return {boolean}
    */
-  function matchesBitmask (bits, mask) {
+  let matchesBitmask = (bits, mask) => {
     return (bits & mask) !== 0;
-  }
+  };
 
   /**
    * Test if a phoneme has the given flag.
@@ -576,53 +576,46 @@
    *
    * @return {boolean}
    */
-  function phonemeHasFlag(phoneme, flag) {
+
+  let phonemeHasFlag = (phoneme, flag) => {
     return matchesBitmask(phonemeFlags[phoneme], flag);
-  }
+  };
 
-  var pR    = 23;
-  var pD    = 57;
-  var pT    = 69;
-
-
-  var FLAG_FRICATIVE= 0x2000;
-
+  let pR = 23;
+  let pD = 57;
+  let pT = 69;
+  let FLAG_FRICATIVE = 0x2000;
   /**
    * liquic consonant
    */
-  var FLAG_LIQUIC   = 0x1000;
 
-  var FLAG_NASAL    = 0x0800;
-
-  var FLAG_ALVEOLAR = 0x0400;
-
-  var FLAG_PUNCT    = 0x0100;
-
-  var FLAG_VOWEL    = 0x0080;
-
-  var FLAG_CONSONANT= 0x0040;
+  let FLAG_LIQUIC = 0x1000;
+  let FLAG_NASAL = 0x0800;
+  let FLAG_ALVEOLAR = 0x0400;
+  let FLAG_PUNCT = 0x0100;
+  let FLAG_VOWEL = 0x0080;
+  let FLAG_CONSONANT = 0x0040;
   /**
    *  dipthong ending with YX
    *
    */
-  var FLAG_DIP_YX   = 0x0020;
 
-  var FLAG_DIPTHONG = 0x0010;
+  let FLAG_DIP_YX = 0x0020;
+  let FLAG_DIPTHONG = 0x0010;
   /** unknown:
    *    'M*', 'N*', 'NX', 'DX', 'Q*', 'CH', 'J*', 'B*', '**', '**', 'D*',
    *    '**', '**', 'G*', '**', '**', 'GX', '**', '**', 'P*', '**', '**',
    *    'T*', '**', '**', 'K*', '**', '**', 'KX', '**', '**'
    */
-  var FLAG_0008     = 0x0008;
 
-  var FLAG_VOICED   = 0x0004;
-
+  let FLAG_0008 = 0x0008;
+  let FLAG_VOICED = 0x0004;
   /**
    * stop consonant
    */
-  var FLAG_STOPCONS = 0x0002;
 
-  var FLAG_UNVOICED_STOPCONS  = 0x0001;
+  let FLAG_STOPCONS = 0x0002;
+  let FLAG_UNVOICED_STOPCONS = 0x0001;
 
   /**
    * Rewrites the phonemes using the following rules:
@@ -657,7 +650,8 @@
    *
    * @return undefined
    */
-  function Parser2(insertPhoneme, setPhoneme, getPhoneme, getStress) {
+
+  var Parser2 = ((insertPhoneme, setPhoneme, getPhoneme, getStress) => {
     /**
      * Rewrites:
      *  'UW' => 'UX' if alveolar flag set on previous phoneme.
@@ -666,44 +660,63 @@
      * @param phoneme
      * @param pos
      */
-    var handleUW_CH_J = function (phoneme, pos) {
+    let handleUW_CH_J = (phoneme, pos) => {
       switch (phoneme) {
         // 'UW' Example: NEW, DEW, SUE, ZOO, THOO, TOO
-        case 53: {
-          // ALVEOLAR flag set?
-          if (phonemeHasFlag(getPhoneme(pos - 1), FLAG_ALVEOLAR)) {
-            { console.log((pos + " RULE: <ALVEOLAR> UW -> <ALVEOLAR> UX")); }
-            setPhoneme(pos, 16); // UX
+        case 53:
+          {
+            // ALVEOLAR flag set?
+            if (phonemeHasFlag(getPhoneme(pos - 1), FLAG_ALVEOLAR)) {
+              {
+                console.log("".concat(pos, " RULE: <ALVEOLAR> UW -> <ALVEOLAR> UX"));
+              }
+
+              setPhoneme(pos, 16); // UX
+            }
+
+            break;
           }
-          break;
-        }
         // 'CH' Example: CHEW
-        case 42: {
-          { console.log((pos + " RULE: CH -> CH CH+1")); }
-          insertPhoneme(pos + 1, 43, getStress(pos)); // '**'
-          break;
-        }
+
+        case 42:
+          {
+            {
+              console.log("".concat(pos, " RULE: CH -> CH CH+1"));
+            }
+
+            insertPhoneme(pos + 1, 43, getStress(pos)); // '**'
+
+            break;
+          }
         // 'J*' Example: JAY
-        case 44: {
-          { console.log((pos + " RULE: J -> J J+1")); }
-          insertPhoneme(pos + 1, 45, getStress(pos)); // '**'
-          break;
-        }
+
+        case 44:
+          {
+            {
+              console.log("".concat(pos, " RULE: J -> J J+1"));
+            }
+
+            insertPhoneme(pos + 1, 45, getStress(pos)); // '**'
+
+            break;
+          }
       }
     };
 
-    var changeAX = function (position, suffix) {
+    let changeAX = (position, suffix) => {
       {
-        console.log((position + " RULE: " + (PhonemeNameTable[getPhoneme(position)]) + " -> AX " + (PhonemeNameTable[suffix])));
+        console.log("".concat(position, " RULE: ").concat(PhonemeNameTable[getPhoneme(position)], " -> AX ").concat(PhonemeNameTable[suffix]));
       }
+
       setPhoneme(position, 13); // 'AX'
+
       insertPhoneme(position + 1, suffix, getStress(position));
     };
 
-    var pos = -1;
-    var phoneme;
+    let pos = -1;
+    let phoneme;
 
-    while((phoneme = getPhoneme(++pos)) !== null) {
+    while ((phoneme = getPhoneme(++pos)) !== null) {
       // Is phoneme pause?
       if (phoneme === 0) {
         continue;
@@ -714,134 +727,166 @@
         // <DIPHTHONG NOT ENDING WITH WX> -> <DIPHTHONG NOT ENDING WITH WX> YX
         // Example: OIL, COW
         {
-          console.log(
-            !phonemeHasFlag(phoneme, FLAG_DIP_YX)
-              ? (pos + " RULE: insert WX following diphthong NOT ending in IY sound")
-              : (pos + " RULE: insert YX following diphthong ending in IY sound")
-          );
-        }
-        // If ends with IY, use YX, else use WX
+          console.log(!phonemeHasFlag(phoneme, FLAG_DIP_YX) ? "".concat(pos, " RULE: insert WX following diphthong NOT ending in IY sound") : "".concat(pos, " RULE: insert YX following diphthong ending in IY sound"));
+        } // If ends with IY, use YX, else use WX
         // Insert at WX or YX following, copying the stress
         // 'WX' = 20 'YX' = 21
+
+
         insertPhoneme(pos + 1, phonemeHasFlag(phoneme, FLAG_DIP_YX) ? 21 : 20, getStress(pos));
         handleUW_CH_J(phoneme, pos);
         continue;
       }
+
       if (phoneme === 78) {
         // 'UL' => 'AX' 'L*'
         // Example: MEDDLE
         changeAX(pos, 24);
         continue;
       }
+
       if (phoneme === 79) {
         // 'UM' => 'AX' 'M*'
         // Example: ASTRONOMY
         changeAX(pos, 27);
         continue;
       }
+
       if (phoneme === 80) {
         // 'UN' => 'AX' 'N*'
         changeAX(pos, 28);
         continue;
       }
+
       if (phonemeHasFlag(phoneme, FLAG_VOWEL) && getStress(pos)) {
         // Example: FUNCTION
         // RULE:
         //       <STRESSED VOWEL> <SILENCE> <STRESSED VOWEL> -> <STRESSED VOWEL> <SILENCE> Q <VOWEL>
         // EXAMPLE: AWAY EIGHT
-        if (getPhoneme(pos+1) === 0) { // If following phoneme is a pause, get next
-          phoneme = getPhoneme(pos+2);
-          if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_VOWEL) && getStress(pos+2)) {
+        if (getPhoneme(pos + 1) === 0) {
+          // If following phoneme is a pause, get next
+          phoneme = getPhoneme(pos + 2);
+
+          if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_VOWEL) && getStress(pos + 2)) {
             {
-              console.log(((pos+2) + " RULE: Insert glottal stop between two stressed vowels with space between them"));
+              console.log("".concat(pos + 2, " RULE: Insert glottal stop between two stressed vowels with space between them"));
             }
-            insertPhoneme(pos+2, 31, 0); // 31 = 'Q'
+
+            insertPhoneme(pos + 2, 31, 0); // 31 = 'Q'
           }
         }
+
         continue;
       }
 
-      var priorPhoneme = (pos === 0) ? null : getPhoneme(pos - 1);
+      let priorPhoneme = pos === 0 ? null : getPhoneme(pos - 1);
 
       if (phoneme === pR) {
         // RULES FOR PHONEMES BEFORE R
         switch (priorPhoneme) {
-          case pT: {
-            // Example: TRACK
-            { console.log((pos + " RULE: T* R* -> CH R*")); }
-            setPhoneme(pos - 1, 42); // 'T*' 'R*' -> 'CH' 'R*'
-            break;
-          }
-          case pD: {
-            // Example: DRY
-            { console.log((pos + " RULE: D* R* -> J* R*")); }
-            setPhoneme(pos - 1, 44); // 'J*'
-            break;
-          }
-          default: {
-            if (phonemeHasFlag(priorPhoneme, FLAG_VOWEL)) {
-              // Example: ART
-              { console.log((pos + " <VOWEL> R* -> <VOWEL> RX")); }
-              setPhoneme(pos, 18); // 'RX'
-            }
-          }
-        }
-        continue;
-      }
+          case pT:
+            {
+              // Example: TRACK
+              {
+                console.log("".concat(pos, " RULE: T* R* -> CH R*"));
+              }
 
-      // 'L*'
-      if ((phoneme === 24) && phonemeHasFlag(priorPhoneme, FLAG_VOWEL)) {
-        // Example: ALL
-        { console.log((pos + " <VOWEL> L* -> <VOWEL> LX")); }
-        setPhoneme(pos, 19); // 'LX'
+              setPhoneme(pos - 1, 42); // 'T*' 'R*' -> 'CH' 'R*'
+
+              break;
+            }
+
+          case pD:
+            {
+              // Example: DRY
+              {
+                console.log("".concat(pos, " RULE: D* R* -> J* R*"));
+              }
+
+              setPhoneme(pos - 1, 44); // 'J*'
+
+              break;
+            }
+
+          default:
+            {
+              if (phonemeHasFlag(priorPhoneme, FLAG_VOWEL)) {
+                // Example: ART
+                {
+                  console.log("".concat(pos, " <VOWEL> R* -> <VOWEL> RX"));
+                }
+
+                setPhoneme(pos, 18); // 'RX'
+              }
+            }
+        }
+
         continue;
-      }
-      // 'G*' 'S*'
+      } // 'L*'
+
+
+      if (phoneme === 24 && phonemeHasFlag(priorPhoneme, FLAG_VOWEL)) {
+        // Example: ALL
+        {
+          console.log("".concat(pos, " <VOWEL> L* -> <VOWEL> LX"));
+        }
+
+        setPhoneme(pos, 19); // 'LX'
+
+        continue;
+      } // 'G*' 'S*'
+
+
       if (priorPhoneme === 60 && phoneme === 32) {
         // Can't get to fire -
         //       1. The G -> GX rule intervenes
         //       2. Reciter already replaces GS -> GZ
-        { console.log((pos + " G S -> G Z")); }
+        {
+          console.log("".concat(pos, " G S -> G Z"));
+        }
+
         setPhoneme(pos, 38);
         continue;
-      }
+      } // 'G*'
 
-      // 'G*'
+
       if (phoneme === 60) {
         // G <VOWEL OR DIPHTHONG NOT ENDING WITH IY> -> GX <VOWEL OR DIPHTHONG NOT ENDING WITH IY>
         // Example: GO
-        var phoneme$1 = getPhoneme(pos + 1);
-        // If diphthong ending with YX, move continue processing next phoneme
-        if (!phonemeHasFlag(phoneme$1, FLAG_DIP_YX) && (phoneme$1 !== null)) {
+        let phoneme = getPhoneme(pos + 1); // If diphthong ending with YX, move continue processing next phoneme
+
+        if (!phonemeHasFlag(phoneme, FLAG_DIP_YX) && phoneme !== null) {
           // replace G with GX and continue processing next phoneme
           {
-            console.log(
-              (pos + " RULE: G <VOWEL OR DIPTHONG NOT ENDING WITH IY> -> GX <VOWEL OR DIPTHONG NOT ENDING WITH IY>")
-            );
+            console.log("".concat(pos, " RULE: G <VOWEL OR DIPTHONG NOT ENDING WITH IY> -> GX <VOWEL OR DIPTHONG NOT ENDING WITH IY>"));
           }
+
           setPhoneme(pos, 63); // 'GX'
         }
-        continue;
-      }
 
-      // 'K*'
+        continue;
+      } // 'K*'
+
+
       if (phoneme === 72) {
         // K <VOWEL OR DIPHTHONG NOT ENDING WITH IY> -> KX <VOWEL OR DIPHTHONG NOT ENDING WITH IY>
         // Example: COW
-        var Y = getPhoneme(pos + 1);
-        // If at end, replace current phoneme with KX
+        let Y = getPhoneme(pos + 1); // If at end, replace current phoneme with KX
+
         if (!phonemeHasFlag(Y, FLAG_DIP_YX) || Y === null) {
           // VOWELS AND DIPHTHONGS ENDING WITH IY SOUND flag set?
           {
-            console.log((pos + " K <VOWEL OR DIPTHONG NOT ENDING WITH IY> -> KX <VOWEL OR DIPTHONG NOT ENDING WITH IY>"));
+            console.log("".concat(pos, " K <VOWEL OR DIPTHONG NOT ENDING WITH IY> -> KX <VOWEL OR DIPTHONG NOT ENDING WITH IY>"));
           }
-          setPhoneme(pos, 75);
-          phoneme  = 75;
-        }
-      }
 
-      // Replace with softer version?
-      if (phonemeHasFlag(phoneme, FLAG_UNVOICED_STOPCONS) && (priorPhoneme === 32)) { // 'S*'
+          setPhoneme(pos, 75);
+          phoneme = 75;
+        }
+      } // Replace with softer version?
+
+
+      if (phonemeHasFlag(phoneme, FLAG_UNVOICED_STOPCONS) && priorPhoneme === 32) {
+        // 'S*'
         // RULE:
         //   'S*' 'P*' -> 'S*' 'B*'
         //   'S*' 'T*' -> 'S*' 'D*'
@@ -851,40 +896,46 @@
         //   'S*' 'UN' -> 'S*' '**'
         // Examples: SPY, STY, SKY, SCOWL
         {
-          console.log((pos + " RULE: S* " + (PhonemeNameTable[phoneme]) + " -> S* " + (PhonemeNameTable[phoneme-12])));
+          console.log("".concat(pos, " RULE: S* ").concat(PhonemeNameTable[phoneme], " -> S* ").concat(PhonemeNameTable[phoneme - 12]));
         }
+
         setPhoneme(pos, phoneme - 12);
       } else if (!phonemeHasFlag(phoneme, FLAG_UNVOICED_STOPCONS)) {
         handleUW_CH_J(phoneme, pos);
-      }
+      } // 'T*', 'D*'
 
-      // 'T*', 'D*'
+
       if (phoneme === 69 || phoneme === 57) {
         // RULE: Soften T following vowel
         // NOTE: This rule fails for cases such as "ODD"
         //       <UNSTRESSED VOWEL> T <PAUSE> -> <UNSTRESSED VOWEL> DX <PAUSE>
         //       <UNSTRESSED VOWEL> D <PAUSE>  -> <UNSTRESSED VOWEL> DX <PAUSE>
         // Example: PARTY, TARDY
-        if ((pos > 0) && phonemeHasFlag(getPhoneme(pos-1), FLAG_VOWEL)) {
+        if (pos > 0 && phonemeHasFlag(getPhoneme(pos - 1), FLAG_VOWEL)) {
           phoneme = getPhoneme(pos + 1);
+
           if (phoneme === 0) {
             phoneme = getPhoneme(pos + 2);
           }
-          if (phonemeHasFlag(phoneme, FLAG_VOWEL) && !getStress(pos+1)) {
+
+          if (phonemeHasFlag(phoneme, FLAG_VOWEL) && !getStress(pos + 1)) {
             {
-              console.log((pos + " Soften T or D following vowel or ER and preceding a pause -> DX"));
+              console.log("".concat(pos, " Soften T or D following vowel or ER and preceding a pause -> DX"));
             }
+
             setPhoneme(pos, 30);
           }
         }
+
         continue;
       }
 
       {
-        console.log((pos + ": " + (PhonemeNameTable[phoneme])));
+        console.log("".concat(pos, ": ").concat(PhonemeNameTable[phoneme]));
       }
     } // while
-  }
+
+  });
 
   /**
    * Applies various rules that adjust the lengths of phonemes
@@ -903,181 +954,179 @@
    *
    * @return undefined
    */
-  function AdjustLengths(getPhoneme, setLength, getLength) {
+
+  var AdjustLengths = ((getPhoneme, setLength, getLength) => {
     {
       console.log("AdjustLengths()");
-    }
-
-    // LENGTHEN VOWELS PRECEDING PUNCTUATION
+    } // LENGTHEN VOWELS PRECEDING PUNCTUATION
     //
     // Search for punctuation. If found, back up to the first vowel, then
     // process all phonemes between there and up to (but not including) the punctuation.
     // If any phoneme is found that is a either a fricative or voiced, the duration is
     // increased by (length * 1.5) + 1
-
     // loop index
-    for (var position = 0;getPhoneme(position) !== null;position++) {
+
+
+    for (let position = 0; getPhoneme(position) !== null; position++) {
       // not punctuation?
-      if(!phonemeHasFlag(getPhoneme(position), FLAG_PUNCT)) {
+      if (!phonemeHasFlag(getPhoneme(position), FLAG_PUNCT)) {
         continue;
       }
-      var loopIndex$1 = position;
-      while ((--position > 1) && !phonemeHasFlag(getPhoneme(position), FLAG_VOWEL)) { /* back up while not a vowel */ }
-      // If beginning of phonemes, exit loop.
+
+      let loopIndex = position;
+
+      while (--position > 1 && !phonemeHasFlag(getPhoneme(position), FLAG_VOWEL)) {
+        /* back up while not a vowel */
+      } // If beginning of phonemes, exit loop.
+
+
       if (position === 0) {
         break;
-      }
+      } // Now handle everything between position and loopIndex
 
-      // Now handle everything between position and loopIndex
-      for (var vowel=position;position<loopIndex$1;position++) {
+
+      for (let vowel = position; position < loopIndex; position++) {
         // test for not fricative/unvoiced or not voiced
-        if(!phonemeHasFlag(getPhoneme(position), FLAG_FRICATIVE) || phonemeHasFlag(getPhoneme(position), FLAG_VOICED)) {
-          var A = getLength(position);
-          // change phoneme length to (length * 1.5) + 1
+        if (!phonemeHasFlag(getPhoneme(position), FLAG_FRICATIVE) || phonemeHasFlag(getPhoneme(position), FLAG_VOICED)) {
+          let A = getLength(position); // change phoneme length to (length * 1.5) + 1
+
           {
-            console.log(
-              position + ' RULE: Lengthen <!FRICATIVE> or <VOICED> ' +
-              PhonemeNameTable[getPhoneme(position)] +
-              ' between VOWEL:' + PhonemeNameTable[getPhoneme(vowel)] +
-              ' and PUNCTUATION:'+PhonemeNameTable[getPhoneme(position)] +
-              ' by 1.5'
-            );
+            console.log(position + ' RULE: Lengthen <!FRICATIVE> or <VOICED> ' + PhonemeNameTable[getPhoneme(position)] + ' between VOWEL:' + PhonemeNameTable[getPhoneme(vowel)] + ' and PUNCTUATION:' + PhonemeNameTable[getPhoneme(position)] + ' by 1.5');
           }
+
           setLength(position, (A >> 1) + A + 1);
         }
       }
-    }
-
-    // Similar to the above routine, but shorten vowels under some circumstances
+    } // Similar to the above routine, but shorten vowels under some circumstances
     // Loop through all phonemes
-    var loopIndex = -1;
-    var phoneme;
 
-    while((phoneme = getPhoneme(++loopIndex)) !== null) {
-      var position$1 = loopIndex;
-      // vowel?
+
+    let loopIndex = -1;
+    let phoneme;
+
+    while ((phoneme = getPhoneme(++loopIndex)) !== null) {
+      let position = loopIndex; // vowel?
+
       if (phonemeHasFlag(phoneme, FLAG_VOWEL)) {
         // get next phoneme
-        phoneme = getPhoneme(++position$1);
-        // not a consonant
+        phoneme = getPhoneme(++position); // not a consonant
+
         if (!phonemeHasFlag(phoneme, FLAG_CONSONANT)) {
           // 'RX' or 'LX'?
-          if (((phoneme === 18) || (phoneme === 19)) && phonemeHasFlag(getPhoneme(++position$1), FLAG_CONSONANT)) {
+          if ((phoneme === 18 || phoneme === 19) && phonemeHasFlag(getPhoneme(++position), FLAG_CONSONANT)) {
             // followed by consonant?
             {
-              console.log(
-                loopIndex +
-                ' RULE: <VOWEL ' +
-                PhonemeNameTable[getPhoneme(loopIndex)] +
-                '>' + PhonemeNameTable[phoneme] +
-                ' <CONSONANT: ' + PhonemeNameTable[getPhoneme(position$1)] +
-                '> - decrease length of vowel by 1'
-              );
-            }
-            // decrease length of vowel by 1 frame
+              console.log(loopIndex + ' RULE: <VOWEL ' + PhonemeNameTable[getPhoneme(loopIndex)] + '>' + PhonemeNameTable[phoneme] + ' <CONSONANT: ' + PhonemeNameTable[getPhoneme(position)] + '> - decrease length of vowel by 1');
+            } // decrease length of vowel by 1 frame
+
+
             setLength(loopIndex, getLength(loopIndex) - 1);
           }
+
           continue;
-        }
-        // Got here if not <VOWEL>
+        } // Got here if not <VOWEL>
         // FIXME: the case when phoneme === END is taken over by !phonemeHasFlag(phoneme, FLAG_CONSONANT)
-        var flags = (phoneme === null) ? (FLAG_CONSONANT | FLAG_UNVOICED_STOPCONS) : phonemeFlags[phoneme];
-        // Unvoiced
+
+
+        let flags = phoneme === null ? FLAG_CONSONANT | FLAG_UNVOICED_STOPCONS : phonemeFlags[phoneme]; // Unvoiced
+
         if (!matchesBitmask(flags, FLAG_VOICED)) {
           // *, .*, ?*, ,*, -*, DX, S*, SH, F*, TH, /H, /X, CH, P*, T*, K*, KX
-
           // unvoiced plosive
-          if(matchesBitmask(flags, FLAG_UNVOICED_STOPCONS)) {
+          if (matchesBitmask(flags, FLAG_UNVOICED_STOPCONS)) {
             // RULE: <VOWEL> <UNVOICED PLOSIVE>
             // <VOWEL> <P*, T*, K*, KX>
             {
-              console.log((loopIndex + " <VOWEL> <UNVOICED PLOSIVE> - decrease vowel by 1/8th"));
+              console.log("".concat(loopIndex, " <VOWEL> <UNVOICED PLOSIVE> - decrease vowel by 1/8th"));
             }
-            var A$1 = getLength(loopIndex);
-            setLength(loopIndex, A$1 - (A$1 >> 3));
-          }
-          continue;
-        }
 
-        // RULE: <VOWEL> <VOWEL or VOICED CONSONANT>
+            let A = getLength(loopIndex);
+            setLength(loopIndex, A - (A >> 3));
+          }
+
+          continue;
+        } // RULE: <VOWEL> <VOWEL or VOICED CONSONANT>
         // <VOWEL> <IY, IH, EH, AE, AA, AH, AO, UH, AX, IX, ER, UX, OH, RX, LX, WX, YX, WH, R*, L*, W*,
         //          Y*, M*, N*, NX, Q*, Z*, ZH, V*, DH, J*, EY, AY, OY, AW, OW, UW, B*, D*, G*, GX>
+
+
         {
-          console.log((loopIndex + " RULE: <VOWEL> <VOWEL or VOICED CONSONANT> - increase vowel by 1/4 + 1"));
-        }
-        // increase length
-        var A$2 = getLength(loopIndex);
-        setLength(loopIndex, (A$2 >> 2) + A$2 + 1); // 5/4*A + 1
+          console.log("".concat(loopIndex, " RULE: <VOWEL> <VOWEL or VOICED CONSONANT> - increase vowel by 1/4 + 1"));
+        } // increase length
+
+
+        let A = getLength(loopIndex);
+        setLength(loopIndex, (A >> 2) + A + 1); // 5/4*A + 1
+
         continue;
-      }
-
-      //  *, .*, ?*, ,*, -*, WH, R*, L*, W*, Y*, M*, N*, NX, DX, Q*, S*, SH, F*,
+      } //  *, .*, ?*, ,*, -*, WH, R*, L*, W*, Y*, M*, N*, NX, DX, Q*, S*, SH, F*,
       // TH, /H, /X, Z*, ZH, V*, DH, CH, J*, B*, D*, G*, GX, P*, T*, K*, KX
-
       // nasal?
-      if(phonemeHasFlag(phoneme, FLAG_NASAL)) {
+
+
+      if (phonemeHasFlag(phoneme, FLAG_NASAL)) {
         // RULE: <NASAL> <STOP CONSONANT>
         //       Set punctuation length to 6
         //       Set stop consonant length to 5
-
         // M*, N*, NX,
-        phoneme = getPhoneme(++position$1);
-        // is next phoneme a stop consonant?
+        phoneme = getPhoneme(++position); // is next phoneme a stop consonant?
+
         if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
           // B*, D*, G*, GX, P*, T*, K*, KX
           {
-            console.log((position$1 + " RULE: <NASAL> <STOP CONSONANT> - set nasal = 5, consonant = 6"));
+            console.log("".concat(position, " RULE: <NASAL> <STOP CONSONANT> - set nasal = 5, consonant = 6"));
           }
-          setLength(position$1, 6); // set stop consonant length to 6
-          setLength(position$1 - 1, 5); // set nasal length to 5
+
+          setLength(position, 6); // set stop consonant length to 6
+
+          setLength(position - 1, 5); // set nasal length to 5
         }
+
         continue;
-      }
-
-      //  *, .*, ?*, ,*, -*, WH, R*, L*, W*, Y*, DX, Q*, S*, SH, F*, TH,
+      } //  *, .*, ?*, ,*, -*, WH, R*, L*, W*, Y*, DX, Q*, S*, SH, F*, TH,
       // /H, /X, Z*, ZH, V*, DH, CH, J*, B*, D*, G*, GX, P*, T*, K*, KX
-
       // stop consonant?
-      if(phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
-        // B*, D*, G*, GX
 
+
+      if (phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
+        // B*, D*, G*, GX
         // RULE: <STOP CONSONANT> {optional silence} <STOP CONSONANT>
         //       Shorten both to (length/2 + 1)
+        while ((phoneme = getPhoneme(++position)) === 0) {
+          /* move past silence */
+        } // if another stop consonant, process.
 
-        while ((phoneme = getPhoneme(++position$1)) === 0) { /* move past silence */ }
-        // if another stop consonant, process.
+
         if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_STOPCONS)) {
           // RULE: <STOP CONSONANT> {optional silence} <STOP CONSONANT>
           {
-            console.log(
-              (position$1 + " RULE: <STOP CONSONANT> {optional silence} <STOP CONSONANT> - shorten both to 1/2 + 1")
-            );
+            console.log("".concat(position, " RULE: <STOP CONSONANT> {optional silence} <STOP CONSONANT> - shorten both to 1/2 + 1"));
           }
-          setLength(position$1, (getLength(position$1) >> 1) + 1);
+
+          setLength(position, (getLength(position) >> 1) + 1);
           setLength(loopIndex, (getLength(loopIndex) >> 1) + 1);
         }
+
         continue;
-      }
-
-      //  *, .*, ?*, ,*, -*, WH, R*, L*, W*, Y*, DX, Q*, S*, SH, F*, TH,
+      } //  *, .*, ?*, ,*, -*, WH, R*, L*, W*, Y*, DX, Q*, S*, SH, F*, TH,
       // /H, /X, Z*, ZH, V*, DH, CH, J*
-
       // liquic consonant?
-      if ((position$1>0)
-        && phonemeHasFlag(phoneme, FLAG_LIQUIC)
-        && phonemeHasFlag(getPhoneme(position$1-1), FLAG_STOPCONS)) {
+
+
+      if (position > 0 && phonemeHasFlag(phoneme, FLAG_LIQUIC) && phonemeHasFlag(getPhoneme(position - 1), FLAG_STOPCONS)) {
         // R*, L*, W*, Y*
         // RULE: <STOP CONSONANT> <LIQUID>
         //       Decrease <LIQUID> by 2
         // prior phoneme is a stop consonant
         {
-          console.log((position$1 + " RULE: <STOP CONSONANT> <LIQUID> - decrease by 2"));
-        }
-        // decrease the phoneme length by 2 frames
-        setLength(position$1, getLength(position$1) - 2);
+          console.log("".concat(position, " RULE: <STOP CONSONANT> <LIQUID> - decrease by 2"));
+        } // decrease the phoneme length by 2 frames
+
+
+        setLength(position, getLength(position) - 2);
       }
     }
-  }
+  });
 
   /**
    * Iterates through the phoneme buffer, copying the stress value from
@@ -1098,28 +1147,32 @@
    *
    * @return undefined
    */
-  function CopyStress(getPhoneme, getStress, setStress) {
+
+  var CopyStress = ((getPhoneme, getStress, setStress) => {
     // loop through all the phonemes to be output
-    var position = 0;
-    var phoneme;
-    while((phoneme = getPhoneme(position)) !== null) {
+    let position = 0;
+    let phoneme;
+
+    while ((phoneme = getPhoneme(position)) !== null) {
       // if CONSONANT_FLAG set, skip - only vowels get stress
       if (phonemeHasFlag(phoneme, FLAG_CONSONANT)) {
-        phoneme = getPhoneme(position + 1);
-        // if the following phoneme is the end, or a vowel, skip
-        if ((phoneme !== null) && phonemeHasFlag(phoneme, FLAG_VOWEL)) {
+        phoneme = getPhoneme(position + 1); // if the following phoneme is the end, or a vowel, skip
+
+        if (phoneme !== null && phonemeHasFlag(phoneme, FLAG_VOWEL)) {
           // get the stress value at the next position
-          var stress = getStress(position + 1);
-          if ((stress !== 0) && (stress < 0x80)) {
+          let stress = getStress(position + 1);
+
+          if (stress !== 0 && stress < 0x80) {
             // if next phoneme is stressed, and a VOWEL OR ER
             // copy stress from next phoneme to this one
             setStress(position, stress + 1);
           }
         }
       }
+
       ++position;
     }
-  }
+  });
 
   /**
    * change phoneme length dependent on stress
@@ -1130,19 +1183,23 @@
    *
    * @return undefined
    */
-  function SetPhonemeLength(getPhoneme, getStress, setLength) {
-    var position = 0;
-    var phoneme;
-    while((phoneme = getPhoneme(position)) !== null) {
-      var stress = getStress(position);
-      if ((stress === 0) || (stress > 0x7F)) {
+
+  var SetPhonemeLength = ((getPhoneme, getStress, setLength) => {
+    let position = 0;
+    let phoneme;
+
+    while ((phoneme = getPhoneme(position)) !== null) {
+      let stress = getStress(position);
+
+      if (stress === 0 || stress > 0x7F) {
         setLength(position, combinedPhonemeLengthTable[phoneme] & 0xFF);
       } else {
-        setLength(position, (combinedPhonemeLengthTable[phoneme] >> 8));
+        setLength(position, combinedPhonemeLengthTable[phoneme] >> 8);
       }
+
       position++;
     }
-  }
+  });
 
   /**
    * Makes plosive stop consonants longer by inserting the next two following
@@ -1154,34 +1211,37 @@
    *
    * @return undefined
    */
-  function ProlongPlosiveStopConsonantsCode41240(getPhoneme, insertPhoneme, getStress) {
-    var pos=-1;
-    var index;
+
+  var ProlongPlosiveStopConsonantsCode41240 = ((getPhoneme, insertPhoneme, getStress) => {
+    let pos = -1;
+    let index;
+
     while ((index = getPhoneme(++pos)) !== null) {
       // Not a stop consonant, move to next one.
       if (!phonemeHasFlag(index, FLAG_STOPCONS)) {
         continue;
-      }
-      //If plosive, move to next non empty phoneme and validate the flags.
+      } //If plosive, move to next non empty phoneme and validate the flags.
+
+
       if (phonemeHasFlag(index, FLAG_UNVOICED_STOPCONS)) {
-        var nextNonEmpty = (void 0);
-        var X = pos;
-        do { nextNonEmpty = getPhoneme(++X); } while (nextNonEmpty === 0);
-        // If not END and either flag 0x0008 or '/H' or '/X'
-        if ((nextNonEmpty !== null)
-          && (
-            phonemeHasFlag(nextNonEmpty, FLAG_0008)
-            || (nextNonEmpty === 36)
-            || (nextNonEmpty === 37))
-        ) {
+        let nextNonEmpty;
+        let X = pos;
+
+        do {
+          nextNonEmpty = getPhoneme(++X);
+        } while (nextNonEmpty === 0); // If not END and either flag 0x0008 or '/H' or '/X'
+
+
+        if (nextNonEmpty !== null && (phonemeHasFlag(nextNonEmpty, FLAG_0008) || nextNonEmpty === 36 || nextNonEmpty === 37)) {
           continue;
         }
       }
+
       insertPhoneme(pos + 1, index + 1, getStress(pos), combinedPhonemeLengthTable[index + 1] & 0xFF);
       insertPhoneme(pos + 2, index + 2, getStress(pos), combinedPhonemeLengthTable[index + 2] & 0xFF);
       pos += 2;
     }
-  }
+  });
 
   /**
    * Parses speech data.
@@ -1192,25 +1252,29 @@
    *
    * @return {Array|Boolean} The parsed data.
    */
-  function Parser (input) {
+
+  var parser = (input => {
     if (!input) {
       return false;
     }
-    var getPhoneme = function (pos) {
+
+    let getPhoneme = pos => {
       {
         if (pos < 0 || pos > phonemeindex.length) {
-          throw new Error('Out of bounds: ' + pos)
+          throw new Error('Out of bounds: ' + pos);
         }
       }
-      return (pos === phonemeindex.length) ? null : phonemeindex[pos]
-    };
-    var setPhoneme = function (pos, value) {
-      {
-        console.log((pos + " CHANGE: " + (PhonemeNameTable[phonemeindex[pos]]) + " -> " + (PhonemeNameTable[value])));
-      }
-      phonemeindex[pos]  = value;
+
+      return pos === phonemeindex.length ? null : phonemeindex[pos];
     };
 
+    let setPhoneme = (pos, value) => {
+      {
+        console.log("".concat(pos, " CHANGE: ").concat(PhonemeNameTable[phonemeindex[pos]], " -> ").concat(PhonemeNameTable[value]));
+      }
+
+      phonemeindex[pos] = value;
+    };
     /**
      * @param {Number} pos         The position in the phoneme array to insert at.
      * @param {Number} value       The phoneme to insert.
@@ -1219,69 +1283,76 @@
      *
      * @return {undefined}
      */
-    var insertPhoneme = function (pos, value, stressValue, length) {
+
+
+    let insertPhoneme = (pos, value, stressValue, length) => {
       {
-        console.log((pos + " INSERT: " + (PhonemeNameTable[value])));
+        console.log("".concat(pos, " INSERT: ").concat(PhonemeNameTable[value]));
       }
-      for(var i = phonemeindex.length - 1; i >= pos; i--) {
-        phonemeindex[i+1]  = phonemeindex[i];
-        phonemeLength[i+1] = getLength(i);
-        stress[i+1]        = getStress(i);
+
+      for (let i = phonemeindex.length - 1; i >= pos; i--) {
+        phonemeindex[i + 1] = phonemeindex[i];
+        phonemeLength[i + 1] = getLength(i);
+        stress[i + 1] = getStress(i);
       }
-      phonemeindex[pos]  = value;
+
+      phonemeindex[pos] = value;
       phonemeLength[pos] = length | 0;
-      stress[pos]        = stressValue;
-    };
-    var getStress = function (pos) { return stress[pos] | 0; };
-    var setStress = function (pos, stressValue) {
-      {
-        console.log(
-          (pos + " \"" + (PhonemeNameTable[phonemeindex[pos]]) + "\" SET STRESS: " + (stress[pos]) + " -> " + stressValue)
-        );
-      }
       stress[pos] = stressValue;
     };
-    var getLength = function (pos) { return phonemeLength[pos] | 0; };
-    var setLength = function (pos, length) {
+
+    let getStress = pos => stress[pos] | 0;
+
+    let setStress = (pos, stressValue) => {
       {
-        console.log(
-          (pos + " \"" + (PhonemeNameTable[phonemeindex[pos]]) + "\" SET LENGTH: " + (phonemeLength[pos]) + " -> " + length)
-        );
+        console.log("".concat(pos, " \"").concat(PhonemeNameTable[phonemeindex[pos]], "\" SET STRESS: ").concat(stress[pos], " -> ").concat(stressValue));
+      }
+
+      stress[pos] = stressValue;
+    };
+
+    let getLength = pos => phonemeLength[pos] | 0;
+
+    let setLength = (pos, length) => {
+      {
+        console.log("".concat(pos, " \"").concat(PhonemeNameTable[phonemeindex[pos]], "\" SET LENGTH: ").concat(phonemeLength[pos], " -> ").concat(length));
+
         if ((length & 128) !== 0) {
           throw new Error('Got the flag 0x80, see CopyStress() and SetPhonemeLength() comments!');
         }
-        if (pos<0 || pos>phonemeindex.length) {
-          throw new Error('Out of bounds: ' + pos)
+
+        if (pos < 0 || pos > phonemeindex.length) {
+          throw new Error('Out of bounds: ' + pos);
         }
       }
+
       phonemeLength[pos] = length;
     };
 
-    var stress = []; //numbers from 0 to 8
-    var phonemeLength = [];
-    var phonemeindex = [];
+    let stress = []; //numbers from 0 to 8
 
-    var pos = 0;
-    Parser1(
-      input,
-      function (value) {
-        stress[pos] = 0;
-        phonemeLength[pos] = 0;
-        phonemeindex[pos++] = value;
-      },
-      function (value) {
-        {
-          if ((value & 128) !== 0) {
-            throw new Error('Got the flag 0x80, see CopyStress() and SetPhonemeLength() comments!');
-          }
+    let phonemeLength = [];
+    let phonemeindex = [];
+    let pos = 0;
+    Parser1(input, value => {
+      stress[pos] = 0;
+      phonemeLength[pos] = 0;
+      phonemeindex[pos++] = value;
+    }, value => {
+      {
+        if ((value & 128) !== 0) {
+          throw new Error('Got the flag 0x80, see CopyStress() and SetPhonemeLength() comments!');
         }
-        stress[pos - 1] = value; /* Set stress for prior phoneme */
       }
-    );
+
+      stress[pos - 1] = value;
+      /* Set stress for prior phoneme */
+    });
 
     {
       PrintPhonemes(phonemeindex, phonemeLength, stress);
     }
+
     Parser2(insertPhoneme, setPhoneme, getPhoneme, getStress);
     CopyStress(getPhoneme, getStress, setStress);
     SetPhonemeLength(getPhoneme, getStress, setLength);
@@ -1292,10 +1363,8 @@
       PrintPhonemes(phonemeindex, phonemeLength, stress);
     }
 
-    return phonemeindex.map(function (v, i) { return v ? [v, phonemeLength[i] | 0, stress[i] | 0] : null; })
-  		     .filter(function (v) { return v; });
-  }
-
+    return phonemeindex.map((v, i) => v ? [v, phonemeLength[i] | 0, stress[i] | 0] : null).filter(v => v);
+  });
   /**
    * Debug printing.
    *
@@ -1305,37 +1374,33 @@
    *
    * @return undefined
    */
-  function PrintPhonemes (phonemeindex, phonemeLength, stress) {
-    function pad(num) {
-      var s = '000' + num;
+
+  let PrintPhonemes = (phonemeindex, phonemeLength, stress) => {
+    let pad = num => {
+      let s = '000' + num;
       return s.substr(s.length - 3);
-    }
+    };
 
     console.log('==================================');
     console.log('Internal Phoneme presentation:');
     console.log(' pos  idx  phoneme  length  stress');
     console.log('----------------------------------');
-    var loop = function ( i ) {
-      var name = function (phoneme) {
+
+    for (let i = 0; i < phonemeindex.length; i++) {
+      let name = phoneme => {
         if (phonemeindex[i] < 81) {
           return PhonemeNameTable[phonemeindex[i]];
         }
-        return '??'
+
+        return '??';
       };
-      console.log(
-        ' %s  %s  %s       %s     %s',
-        pad(i),
-        pad(phonemeindex[i]),
-        name(phonemeindex[i]),
-        pad(phonemeLength[i]),
-        pad(stress[i])
-      );
-    };
 
-    for (var i=0;i<phonemeindex.length;i++) loop( i );
+      console.log(' %s  %s  %s       %s     %s', pad(i), pad(phonemeindex[i]), name(phonemeindex[i]), pad(phonemeLength[i]), pad(stress[i]));
+    }
+
     console.log('==================================');
-  }
+  };
 
-  return Parser;
+  return parser;
 
-})));
+}));
