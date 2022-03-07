@@ -1,0 +1,266 @@
+(def play:title "Nibbles")
+(def play:blurb r#"
+        <p>The QBasic classic!
+        <p>Nibbles is a game for two players.  Navigate your snakes
+           around the game board trying to eat up numbers while avoiding
+           running into walls or each other.  The more numbers you eat up,
+           the more points you gain and the longer your snake becomes.
+        <p><b>Game Controls</b>
+        <p><b>P</b> - Pause
+        <p><b>Arrow keys</b> - Player 1
+        <p><b>W A S D</b> - Player 2
+"#)
+
+(defstruct Point row col)
+
+(defn collect (iter)
+    (arr ..iter))
+
+(defclass Snake
+  (field body) ; array of Point
+  (field length)
+  (field direction)
+  (field lives 5)
+  (field score 0)
+  (field color)
+  (field controls) ; 4 x sym
+  (init (@color @controls))
+  (met put! (row col direction)
+    (= @body (arr (Point row col)))
+    (= @direction direction))
+  (met score$ () (->
+    (->> @score (* 100) str collect (rchunks 3) rev (map (fn1 (str .._))) collect)
+    (join ",") (pad-start 9))))
+
+; Repeats action with the given frequency
+(defclass Rate
+  (field max)
+  (field remaining 0)
+  (init (@max))
+  (met at (dt action)
+    (dec! @remaining dt)
+    (when (< @remaining 0)
+      (inc! @remaining @max)
+      (action))))
+
+(defn mul (..arrays)
+    (arr ..(map (fn1 (* .._)) (zip ..arrays))))
+
+(defclass Game
+  (const grid-size '(80 50))
+  (const grid-cell '(6 5))
+  (const (grid-width grid-height) @grid-size)
+  (const screen-size
+    (mul @grid-size @grid-cell))
+  (met screen-coords (row col)
+    (mul (arr col row) @grid-cell))
+
+  (const wall '(255 85 85))
+  (const background '(0 0 170))
+
+  (field arena)
+  (met rowcol (point) ; QBasic uses 1-based indexing
+    (let row (- [point 'row] 1))
+    (let col (- [point 'col] 1))
+    (arr row col))
+  (met index (point) 
+    (let (row col) (@rowcol point))
+    (-> row (* @grid-width) (+ col)))
+
+  (met set! (point color)
+    (let (row col) (@rowcol point))
+    (play:fill ..(@screen-coords row col) ..@grid-cell ..color)
+    (= [@arena (@index point)] color))
+
+  (met occupied? (point)
+    (not (same? [@arena (@index point)] @background)))
+
+  (met print (text row col)
+    (let (x y) (@screen-coords row col))
+    (play:fill x y ..(@screen-coords 2 (len text)) ..@background)
+    (for (n c) in (enumerate text)
+      (play:draw
+        (if (eq? c \,) 'comma (-> c unparse [1 :] sym))
+        (-> [@grid-cell 0] (* n) (+ x)) y)))
+
+  (met center (text row)
+    (@print text row (-> @grid-width (/ 2) (- (-> text len (/ 2))))))
+
+  (field snakes (arr
+    (Snake '(255 255 85) '(up down left right))
+    (Snake '(255 85 255) '(w s a d))))
+  (field level 1)
+
+  (fsm
+    (state* Init-Level
+      (met update (dt)
+        (= @arena (arr ..(take (* ..@grid-size) (repeat-with (fn0 @background)))))
+	(play:fill 0 0 ..@screen-size ..@background)
+
+        (let-fn set-wall (row col)
+          (@set! (Point row col) @wall))
+        (let-macro set-walls (range ..walls)
+          `(do ~..(map (fn1
+            `(forni (i ~..range) (set-wall ~.._))) walls)))
+
+        (set-walls (1 @grid-width) (3 i) (@grid-height i))
+        (set-walls (4 (- @grid-height 1)) (i 1) (i @grid-width))
+        (@center "LEVEL {@level}" 0)
+
+        (let-fn set-locations (..locations)
+          (for (snake (row col direction)) in (zip @snakes locations)
+            (.put! snake row col direction)))
+
+        (match @level
+          (1 (set-locations '(25 50 right) '(25 30 left)))
+          (2 (do
+            (set-walls (20 60) (25 i))
+            (set-locations '(7 60 left) '(43 20 right))))
+          (3 (do
+            (set-walls (10 40) (i 20) (i 60))
+            (set-locations '(25 50 up) '(25 30 down))))
+          (4 (do
+            (set-walls (4 30) (i 20) ((- 53 i) 60))
+            (set-walls (2 40) (38 i) (15 (- 81 i)))
+            (set-locations '(7 60 left) '(43 20 right))))
+          (5 (do
+            (set-walls (13 39) (i 21) (i 59))
+            (set-walls (23 57) (11 i) (41 i))
+            (set-locations '(25 50 up) '(25 30 down))))
+          (6 (do
+            (set-walls (4 22) (i 10) (i 20) (i 30) (i 40) (i 50) (i 60) (i 70))
+            (set-walls (31 49) (i 10) (i 20) (i 30) (i 40) (i 50) (i 60) (i 70))
+            (set-locations '(7 65 down) '(43 15 up))))
+          (7 (do
+            (set-walls (4 49 2) (i 40))
+            (set-locations '(7 65 down) '(43 15 up))))
+          (8 (do
+            (set-walls (4 40) (i 10) ((- 53 i) 20) (i 30) ((- 53 i) 40) (i 50) ((- 53 i) 60) (i 70))
+            (set-locations '(7 65 down) '(43 15 up))))
+          (9 (do
+            (set-walls (6 47) (i i) (i (+ i 28)))
+            (set-locations '(40 75 up) '(15 5 down))))
+          (_ (do
+            (set-walls (4 49 2) (i 10) ((+ i 1) 20) (i 30) ((+ i 1) 40) (i 50) ((+ i 1) 60) (i 70))
+            (set-locations '(7 65 down) '(43 15 up)))))
+
+        (for snake in @snakes
+          (= [snake 'length] 2))
+
+        (@enab! 'Playing)))
+
+    (state Playing
+      (field blink-rate (Rate 0.2))
+      (field blink-on #t)
+      (field move-rate (Rate 0.3))
+      (field target)
+      (field prize 1)
+
+      (state Paused
+        (init-state ()
+          (@center "*** PAUSED ***" 0))
+        (wrap Playing:update (dt)
+          (when (play:released? 'p)
+            (@center "    LEVEL {@level}    " 0)
+            (@disab! 'Paused))))
+
+      (met update (dt)
+        (let-fn print-score ()  ; Note: this hardcodes the number and attributes of the snakes.
+          (let (sammy jake) @snakes)
+          (@print "SAMMY-->  Lives: {[sammy 'lives]}     {(.score$ sammy)}" 0 (- @grid-width 32))
+          (@print "{(.score$ jake)}  Lives: {[jake 'lives]}  <--JAKE" 0 0))
+
+        ; Get keyboard input & Change direction accordingly
+        (while (not @target)
+          (= @target (Point (row (rand 3 (- @grid-height 1))) (col (rand 2 (- @grid-width 1)))))
+          (if (@occupied? @target)
+            (= @target #n) ; retry
+            (print-score)))
+
+        (.at @blink-rate dt (fn0
+          (if @blink-on
+            (@set! @target '(85 255 85))
+            (@set! @target @background))
+          (= @blink-on (not @blink-on))))
+
+        ; Handle the input
+        (for snake in @snakes
+          (let (up down left right) [snake 'controls])
+          (let directions (tab (up 'up) (down 'down) (left 'left) (right 'right)))
+
+          (let-fn handle-key (key opposite)
+            (when (and (play:down? key) (not (same? [snake 'direction] opposite)))
+              (= [snake 'direction] [directions key])))
+          (let-fn handle-keys (key opposite)
+            (handle-key key opposite)
+            (handle-key opposite key))
+
+          (handle-keys up down)
+          (handle-keys left right))
+
+        (when (play:released? 'p)
+          (@enab! 'Paused) (return))
+
+        ; Move the snakes
+        (.at @move-rate dt (fn0 
+          (for snake in @snakes (when (> [snake 'lives] 0)
+            (let position (clone [[snake 'body] 0]))
+            (match [snake 'direction]
+              ('up    (dec! [position 'row]))
+              ('down  (inc! [position 'row]))
+              ('left  (dec! [position 'col]))
+              ('right (inc! [position 'col])))
+
+            ; If snake hits target, respond accordingly
+            (when (eq? position @target)
+              (inc! [snake 'score] @prize)
+              (inc! [snake 'length] (* 4 @prize))
+              (when (== @prize 10)
+                (inc! @level)
+                (@enab! 'Erase-Snake)
+                (return))
+              (inc! @prize)
+              (@set! @target @background)
+              (= @target #n)
+              (mul! [@move-rate 'max] 0.9))
+
+            ; If player runs into any point, he dies
+            (when (@occupied? position)
+              (dec! [snake 'lives])
+              (dec! [snake 'score] 10)
+              (if (all? (fn1 (== 0 [_ 'lives])) @snakes)
+                (@enab! 'Game-Over)
+                (@enab! 'Erase-Snake snake))
+              (return))
+
+            ; Otherwise, move the snake, and erase the tail
+            (when (== (len [snake 'body]) [snake 'length])
+              (@set! (pop! [snake 'body]) @background))
+            (push-start! [snake 'body] position)
+            (@set! position [snake 'color])))))))
+
+    (state Erase-Snake
+      (field erase-rate (Rate 0.1))
+      (field position 1)
+      (field snake)
+      (init-state ((? @snake)))
+      (met update (dt)
+        (.at @erase-rate dt (fn0
+          (for snake in (if @snake (arr @snake) @snakes)
+            (forni (b (-> [snake 'body] (len) (- @position)) 0 -10)
+              (@set! [[snake 'body] b] @background)))
+
+          (inc! @position)
+          (when (== @position 12)
+            (@enab! 'Init-Level))))))
+
+    (state Game-Over
+      (init-state ()
+        (play:fill ..(@screen-coords 10 (-> @grid-width (/ 2) (- 16))) ..(@screen-coords 7 32) 255 255 255)
+        (play:fill ..(@screen-coords 11 (-> @grid-width (/ 2) (- 15))) ..(@screen-coords 5 30) ..@background)
+        (@center "G A M E   O V E R" 13))
+      (met update (dt) ()))))
+
+(def game (Game))
+(defn play:update (dt) (.update game dt))
+(def (play:width play:height) [game 'screen-size])
