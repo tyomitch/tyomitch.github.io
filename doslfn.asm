@@ -58,6 +58,7 @@ USEFASTOPEN	=	0	;1 to enable the FASTOPEN cache
 
 USELANG		=	0	;Make COM smaller by omitting German strings
 USEUNI		=	0	;Make COM smaller by omitting Unicode support
+USECD		=	0	;Make COM smaller by omitting CD-ROM support
 
 ;********************
 ;** DOS structures **
@@ -815,11 +816,13 @@ oflags = wo $-2
 	jmp	@@isrend
 endp
 
+if USECD
 proc Check_CDFS_Throw
 	call	Check_CDFS
 	jnz	SetErr5
 	ret
 endp
+endif
 
 ;THROW-Geschichten...
 SetErr18:
@@ -1387,10 +1390,12 @@ counter_write	dd	0
 counter_i2171	dd	0
 LastError	db	0
 
+if USECD
 proc Check_CDFS
 	test	[DriveType],DT_CDFS	;bytefressender Befehl
 	ret
 endp
+endif
 
 proc Check_FB
 	cmp	[DriveType],1		;CY if fallback mode
@@ -1442,8 +1447,10 @@ proc ReadSec
 	mov	eax,[CurSector]
 ReadSecEAX:
 	call	_set_cur
+if USECD
 	call	Check_CDFS
 	jnz	CD_ReadSec
+endif
 	sub	eax,[rwrec.sect]
 	cmp	eax,4
 	jb	@@e		;nichts tun!
@@ -1634,10 +1641,14 @@ proc GetDrvParams pascal
 	jne	@@readin	;bei Unterschied sofort lesen
 	cmp	al,2
 	mov	cx,FDChangeTime
+ife USECD
+        jnc @@ret
+else
 	jc	@@chktick	;Laufwerke default:, A: und B:
 	call	Check_CDFS
 	jz	@@ret
 	mov	cl,CDChangeTime
+endif ;USECD
 @@chktick:
 	push	ax
 	 call	GetTick
@@ -1662,12 +1673,14 @@ ife USEFREESPC
 endif
 	call	GetDPB
 	jnc	@@fat
+if USECD
 	;test	[ctrl],CTRL_CDROM
 	;jz	@@nodrv 	;Will kein CD-ROM erkennen
 test_cd:
 	call	CD_Init 	;modified by install/"c" switch
 	jnc	@@e
 @@nodrv:
+endif ;USECD
 	test	[ctrl],CTRL_FB
 	jz	chain
 	mov	[DriveType],0	;kein unterstÅtzter Laufwerkstyp
@@ -2005,8 +2018,10 @@ proc Pick_Sector_From_DirEnt
 ;PA: EAX=[CurSector]=[SuchSektor]=Sektor-Nummer
 ;    CY=1 wenn ungÅltige Cluster-Nummer
 ;VR: EAX,CL
+if USECD
 	call	Check_CDFS
 	jnz	CD_Pick_Sector_From_DirEnt
+endif
 	xor	ax,ax
 	test	[DriveType],DT_FAT32
 	jz	@@1
@@ -2125,8 +2140,10 @@ proc Next_DirEnt
 ;PA: BX=vorgerÅckter DirEnt-Zeiger, ggf. mit neu gelesenem Sektor
 ;    CY=1: kein weiterer Sektor in Clusterkette
 ;VR: alle
+if USECD
 	call	Check_CDFS
 	jnz	CD_Next_DirEnt
+endif
 	add	bx,32		;Grî·e von DirEnt
 	cmp	bx,[SektorEnde]
 	cmc
@@ -3212,9 +3229,11 @@ ifdef PATHLOOK
 endif
 	BSET	[PFlags],PF_Follow	;immer mit Verfolgung ansetzen
 	call	_set_root_sector
+if USECD
 	call	Check_CDFS
 	jz	@@nocd
 	call	CD_Set_Root
+endif
 @@nocd:	cmp	[by si],0		;CY immer 0, Z setzen
 @@e:	ret
 endp
@@ -3237,9 +3256,11 @@ endif
 @@nocache:
 	  test	[File_Flags],File_Flag_NDevice
 	  jz	@@fallback		;dirty hack 11/01
+if USECD
 	  mov	bx,ofs CD_Match_LFN_Proc
 	  call	Check_CDFS
 	  jnz	@@scan
+endif
 	  mov	bx,ofs Match_LFN_Proc
 @@scan:   call	DirScan
 	  jc	@@e
@@ -3499,7 +3520,9 @@ proc lfn_mkdir
 	mov	si,dx
 	call	dirent_Locate
 	jnc	@@Err5		;Existiert bereits: Fehler!
+if USECD
 	call	Check_CDFS_Throw	;auf CD schlecht mîglich:-)
+endif
 	;2. geeigneten, nicht bereits vorhandenen FCB-Namen ermitteln
 	call	build_unique_fcb_name_start_1
 	call	SFN_AL_CallOld
@@ -3974,7 +3997,9 @@ proc lfn_creat
 	jnc	@@open		;Nur îffnen: ganz einfach!
 	dec	ah
 	jnz	SetErr2		;oberes Nibble muss 1 sein (sonst Code 2)!
+if USECD
 	call	Check_CDFS_Throw ;auf CD ist CREAT schlecht mîglich:-)
+endif
 	call	CTRL_Write_test
 	jc	@@open_only	;8.3-Name erzeugen lassen (ohne Schlange?!)
 	;2. geeigneten, nicht bereits vorhandenen FCB-Namen ermitteln
@@ -4251,7 +4276,9 @@ proc Find_Longname_For_Deletion
 	mov	si,dx
 	call	dirent_locate
 	jc	SetError
+if USECD
 	call	Check_CDFS_Throw	;auf CD schlecht mîglich:-)
+endif
 	mov	di,[longname]
 	cmp	[by di],0	;wirklich mit langem Namen?
 	jz	@@w		;nein
@@ -4464,8 +4491,10 @@ proc Get_Attr
 ;FU: get the attribute of the current file
 ;PE: BX=directory entry
 ;PA: AL=attribute (AH=0 if CD)
+if USECD
 	call	Check_CDFS
 	jnz	CD_Get_Attr
+endif
 	mov	al,[(TDirEnt bx).attr]
 	ret
 endp
@@ -4618,10 +4647,12 @@ Err5:	jnz	SetErr5 	;verbotener Schreibzugriff!
 	test	[File_Flags],File_Flag_NDevice
 	jz	SetErr2
 	mov	al,[Client_BL]
-	mov	si,ofs cd_pvt_attr
 	cbw
+if USECD
+	mov	si,ofs cd_pvt_attr
 	call	Check_CDFS
 	jnz	@@iscd
+endif
 	mov	si,ofs pvt_attr
 	call	Check_FB
 	jnc	@@a
@@ -4925,8 +4956,11 @@ if USEFASTOPEN
 	pop	cx di
 	jnc	@@f
 endif
-@@w:	call	Check_CDFS
+@@w:
+if USECD
+	call	Check_CDFS
 	jnz	CD_ffirst
+endif
 @@nocd: mov	bx,ofs Glob_LFN_Proc
 CD_ffirst_ret:
 	call	DirScan		;auf FAT ganz einfach!
@@ -4950,8 +4984,10 @@ proc FillFD
 	call	InitFill		;liefert CH(!)
 	call	Get_Attr
 	stosd
+if USECD
 	call	Check_CDFS
 	jnz	CD_FillFD
+endif
 	mov	eax,[(TDirEnt bx).timec];creation time
 	mov	dl,[(TDirEnt bx).timec10ms]
 	call	evtl_time_dos_win
@@ -4999,9 +5035,11 @@ proc lfn_fnext
 	lodsw
 	xchg	bx,ax		;Sektorzeiger
 	movsd			;CD_Residual & CD_Num (dummy for FAT)
+if USECD
 	mov	ax,ofs CD_Glob_LFN_Proc
 	call	Check_CDFS
 	jnz	@@cd
+endif
 	mov	ax,ofs Glob_LFN_Proc
 @@cd:	mov	[MatchPtr],ax
 	mov	[CurPathComp],si	;Maske folgt (Zeiger in Heap)
@@ -5106,8 +5144,10 @@ SetErr1:
 proc lfn_genshort
 ;Aus Dateiname (ohne Pfad) kurzen Dateinamen (Alias) generieren
 ;Seiteneffekt: arbeitet bis zum Backslash (Pfad-Komponente)
+if USECD
 	cmp	[Client_DL],0CDh	;SHSUCDX Joliet->FCB conversion
 	je	CD_Convert
+endif
 	cmp	[Client_DL],11h		;nur OEM->OEM wird unterstÅtzt!
 	jne	SetErr1
 	cmp	[Client_DH],2		;nur 0 (FCB) oder 1 (8.3)
@@ -5378,8 +5418,10 @@ four = wo $-2
 	jc	@@novolinf		;Nicht einschreiben!
 	xchg	cx,ax
 	call	ESDI_from_Client
+if USECD
 	call	Check_CDFS
 	jnz	@@cd
+endif
 	mov	al,'?'
 	call	Check_FB
 	jc	@@unk
@@ -5399,10 +5441,12 @@ four = wo $-2
 @@novolinf:
 	clc
 	ret
+if USECD
 @@cd:	jcxz	@@novolinf
 	mov	eax,'SFDC'              ;lies: "CDFS"
 	stosd
 	jmp	@@0
+endif
 endp
 
 proc lfn_subst		;nur "Query Subst"
@@ -5583,9 +5627,11 @@ proc _put_to_cache
 	pop	bx
 	jae	@@ent
 	lea	si,[CurSector]
+if USECD
 	call	Check_CDFS
 	jz	@@e
 	movsd
+endif
 @@e:	movsd			;CD_Residual & CD_Num
 	ret
 
@@ -5899,6 +5945,7 @@ endif
 
 ;============ cutting line, CDROM only code follow this line ================
 
+if USECD
 	org Sektor
 CD_Sektor	db	2048 dup (?)	;2K fÅr CDFS-Sektor
 		db	0		;sentinel for directory scanning
@@ -6431,6 +6478,7 @@ proc CD_Next_DirEnt
 _cde:
 @@e:	ret
 endp
+endif ;USECD
 
 ;================ common buffer (to be moved into heap) ================
 
@@ -7024,10 +7072,13 @@ printf_buffer	=	$
 ;der Hilfe-String ist zwar wesentlich lÑnger, aber damit endet das Programm,
 ;und nachfolgender Code wird nicht mehr benutzt.
 
-Alt_String_Table =	$+80	;einige Strings im "kritischen Bereich"
+;Alt_String_Table =      $+80    ;einige Strings im "kritischen Bereich"
+;tyomitch 2020: Alt_String_Table was never read from
 ;==== END CRITICAL INITIALIZATION SECTION ====
 
+if USECD
 	org Residente_Puffer		;keine Null-Orgien!
+endif
 ;==== dieser Init-Code wird von printf() Åberschrieben! ====
 proc InstChk
 ;FU: Installations-Test
@@ -7264,6 +7315,7 @@ endif
 	 mov	[by FAT_W],0b8h
 	 mov	[wo FAT_W+1],26h
 @@ext:
+if USECD
 ;== 7. Anwesenheit von SHSUCDX prÅfen und Vorgabe stellen ==
 	 mov	ax,[wo test_cd+1] ;remember correct call offset
 	 mov	[wo cdok+1],ax
@@ -7289,6 +7341,7 @@ endif
 	 mov	[wo test_cd],9090h	;NOP
 	 mov	[by test_cd+2],90h
 @@cddone:
+endif ;USECD
 	pop	cx
 @@nostartup:
 if USELANG
@@ -7324,9 +7377,13 @@ cmd_verteiler:	dvt	0dh,Install
 		dvt	'~',SetTilde
 		dvt	'T',SetTunnel
 		dvt	'F',SetFB
+if USECD
 		dvt	'C',SetCDROM
+endif
 		dvt	'I',SetInDOS
+if USECD
 		dvt	'R',SetRoBit
+endif
 if USEWINTIME
 		dvt	'O',SetTimeZone
 endif
@@ -7571,6 +7628,7 @@ proc SetTimeZone
 endp
 endif ;USEWINTIME
 
+if USECD
 proc SetCDROM	;Schalter fÅr CD-ROM-UnterstÅtzung
 	mov	bl,30
 	test	ch,bit 7
@@ -7587,6 +7645,8 @@ cdok:	mov	ax,0		;patched by CD test
 	mov	[by test_cd],cl
 	ret
 endp
+endif ;USECD
+
 proc SetWrite	;Schalter fÅr Schreibzugriff
 	mov	cl,CTRL_Write
 	call	SetPlusMinus
@@ -7620,6 +7680,8 @@ proc SetInDOS	;Schalter fÅr InDOS-Flag-Benutzung
 	mov	[by es:ResetDrv],ah	;Code patchen
 	ret
 endp
+
+if USECD
 proc SetRoBit	;Schalter fÅr ReadOnly-Attribut bei CDFS
 	mov	cl,CTRL_RoBit
 	call	SetPlusMinus
@@ -7630,6 +7692,8 @@ proc SetRoBit	;Schalter fÅr ReadOnly-Attribut bei CDFS
 @@ro:	mov	[by es:CDRO],0f9h	;STC
 	ret
 endp
+endif
+
 proc SetPlusMinus
 	lodsb
 	cmp	al,'+'
@@ -7716,8 +7780,10 @@ if USEDBCS
 @@nx:
 endif
 	DOS	49h		;den Speicher ab es freigeben
+if USECD
 	mov	bx,2		;put SHSUCDX back into ISO mode
 	MUX	150eh
+endif
 	mov	bl,13		;"removed..."
 TXTO1:	jmp	TXTOut
 endp
@@ -7998,6 +8064,8 @@ proc Install	;Installation oder Aktivierung, kein Return
 	inc	ax
 	inc	ax		;LÑnge Åbergehen
 	mov	[lead_byte_table],eax
+;tyomitch 2020: Alt_String_Table was never read from
+if 0
 ;5 kritische Strings umsetzen (in Sektor-Bereich)
 	mov	bx,ofs String_Table
 	mov	si,[bx]
@@ -8006,6 +8074,7 @@ proc Install	;Installation oder Aktivierung, kein Return
 	mov	cx,5
 @@l:	call	strcpy
 	loop	@@l
+endif
 ;Initialisierung des Lokalen Heap vorbereiten
 	call	GetLocalHeapSize
 			;sollte auf Paragrafengrenze aufgerundet werden!
@@ -8016,7 +8085,6 @@ proc Install	;Installation oder Aktivierung, kein Return
 @@a1:	jmp	CriticalInit
 endp
 
-jltfilter$:	dz	"*.JLT"
 
 ;***********************
 ;** String-Ressourcen **
@@ -8160,9 +8228,13 @@ endif
   db   "		- ~{+|-}	* NameNumericTail - tilde usage (I hate snakes)",10
   db   "		- t{+|-}	* PreserveLongNames - tunnel effect",10
   db   "		- f{+|-}	* fallback mode - supply LFN for all drives",10
+if USECD
   db   "		- c{+|-}	* CDROM support",10
+endif
   db   "		- i{+|-}	* reenter lock via InDOS flag + RESET DRIVE",10
+if USECD
   db   "		- r{+|-}	* read-only bit for CDROM files",10
+endif
 if USEWINTIME
   db   "		- o[N]		* set time zone N or read TZ if absent",10
 endif
